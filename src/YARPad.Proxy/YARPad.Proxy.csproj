@@ -9,8 +9,12 @@
 		<RootNamespace>CodingCell.YARPad.Proxy</RootNamespace>
 		<InvariantGlobalization>true</InvariantGlobalization>
     <Version>0.19.0</Version>
-  </PropertyGroup>	
-	
+  </PropertyGroup>
+
+  <ItemGroup>
+    <ContainerLabel Include="org.opencontainers.image.source" Value="https://github.com/ante-maric/YARPad" />
+  </ItemGroup>
+  
 	<ItemGroup>
 		<PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
 		<PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
