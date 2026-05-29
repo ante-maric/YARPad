@@ -1,0 +1,17 @@
+﻿<MudStack Spacing="2">
+    @foreach (var parameterDefinition in Transform.ParameterDefinitions.Join(Transform.Parameters, o => o.Name, i => i.Key, (o, i) => new { Definition = o, Parameter = i }))
+    {
+        <TopToolTip Text="@parameterDefinition.Definition.Description">
+            <MudTextField Label="@("ⓘ " + parameterDefinition.Definition.Name)"
+                          @bind-Value="parameterDefinition.Parameter.Value"
+                          For="@(() => parameterDefinition.Parameter.Value)"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense" />
+        </TopToolTip>
+    }    
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired]
+    public required CustomTransform Transform { get; set; }
+}

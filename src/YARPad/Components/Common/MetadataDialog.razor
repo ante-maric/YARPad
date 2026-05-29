@@ -1,0 +1,92 @@
+@inject YarpMetadataValidator Validator
+
+<MudDialog Class="border mud-border-primary-darken">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Metadata Editor</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm @ref="_form" Model="@Metadata" Validation="@_validationHandler.ValidateAsync">
+            <MudStack Spacing="2">
+                <MudAutocomplete T="string"
+                                 Label="Key"
+                                 @bind-Value="Metadata.Key"
+                                 For="@(() => Metadata.Key)"
+                                 Variant="Variant.Outlined"
+                                 Margin="Margin.Dense"
+                                 SearchFunc="@SearchKeys"
+                                 CoerceText="false"
+                                 CoerceValue="true"
+                                 ResetValueOnEmptyText="false"
+                                 ShowProgressIndicator="false"
+                                 HelperText="@(SuggestedKeys.Count > 0 ? "Suggested keys available based on selected policies" : string.Empty)" />
+                <MudTextField Label="Value"
+                              @bind-Value="Metadata.Value"
+                              For="@(() => Metadata.Value)"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense" />
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="@ColorResolver.Buttons.Save" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private MudForm? _form;
+    private DeferredValidationHandler<YarpMetadata>? _validationHandler;
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public string? MetadataKey { get; set; }
+
+    [Parameter, EditorRequired]
+    public required YarpMetadata Metadata { get; set; }
+
+    [Parameter, EditorRequired]
+    public required List<YarpMetadata> MetadataList { get; set; }
+
+    [Parameter]
+    public List<string> SuggestedKeys { get; set; } = [];
+
+    private async Task Save()
+    {
+        if (_validationHandler == null || _form == null)
+            return;
+
+        await _validationHandler.ExecuteValidationAsync(() => _form.ValidateAsync());
+
+        if (!_form.IsValid)
+            return;
+
+        MudDialog.Close(DialogResult.Ok(Metadata));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        _validationHandler = new(Validator);
+    }
+
+    private Task<IEnumerable<string>> SearchKeys(string value, CancellationToken cancellationToken)
+    {
+        return Task.FromResult<IEnumerable<string>>(SuggestedKeys);
+    }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        Validator.ContextData[ValidatorContext.Metadata.IS_EDITING] = true;
+        Validator.ContextData[ValidatorContext.Metadata.ORIGINAL_KEY] = MetadataKey;
+        Validator.ContextData[ValidatorContext.Metadata.LIST] = MetadataList;
+    }
+}

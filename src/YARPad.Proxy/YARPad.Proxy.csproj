@@ -1,0 +1,61 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<BlazorDisableThrowNavigationException>true</BlazorDisableThrowNavigationException>
+		<RequiresAspNetWebAssets>true</RequiresAspNetWebAssets>
+		<RootNamespace>CodingCell.YARPad.Proxy</RootNamespace>
+		<InvariantGlobalization>true</InvariantGlobalization>
+    <Version>0.19.0</Version>
+  </PropertyGroup>	
+	
+	<ItemGroup>
+		<PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
+		<PackageReference Include="Serilog.Sinks.Console" Version="6.1.1" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<ProjectReference Include="..\YARPad.Hosting\YARPad.Hosting.csproj">
+			<AdditionalProperties
+			  Condition="'$(RuntimeIdentifier)' != '' and $(RuntimeIdentifier.StartsWith('win'))">
+				LegoTargetOS=windows
+			</AdditionalProperties>
+			<AdditionalProperties
+			  Condition="'$(RuntimeIdentifier)' != '' and ( $(RuntimeIdentifier.StartsWith('linux')) Or $(RuntimeIdentifier.StartsWith('osx')) )">
+				LegoTargetOS=linux
+			</AdditionalProperties>
+		</ProjectReference>
+	  <ProjectReference Include="..\YARPad\YARPad.csproj" />
+	</ItemGroup>
+
+	<Target Name="SelectLegoBinary" BeforeTargets="AssignTargetPaths">
+		<PropertyGroup>
+			<!-- Prefer the publish RID when one exists -->
+			<_LegoTarget Condition="'$(RuntimeIdentifier)' != '' and $(RuntimeIdentifier.StartsWith('win'))">win</_LegoTarget>
+			<_LegoTarget Condition="'$(RuntimeIdentifier)' != '' and ( $(RuntimeIdentifier.StartsWith('linux')) Or $(RuntimeIdentifier.StartsWith('osx')) )">unix</_LegoTarget>
+
+			<!-- Fallback for normal local builds without a RID -->
+			<_LegoTarget Condition="'$(_LegoTarget)' == '' and $([MSBuild]::IsOSPlatform('Windows'))">win</_LegoTarget>
+			<_LegoTarget Condition="'$(_LegoTarget)' == ''">unix</_LegoTarget>
+		</PropertyGroup>
+
+		<ItemGroup>
+			<Content Include="..\YARPad.Hosting\tools\lego.exe" Condition="'$(_LegoTarget)' == 'win'">
+				<Link>tools\lego.exe</Link>
+				<TargetPath>tools\lego.exe</TargetPath>
+				<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+				<CopyToPublishDirectory>Always</CopyToPublishDirectory>
+			</Content>
+
+			<Content Include="..\YARPad.Hosting\tools\lego" Condition="'$(_LegoTarget)' != 'win'">
+				<Link>tools\lego</Link>
+				<TargetPath>tools\lego</TargetPath>
+				<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+				<CopyToPublishDirectory>Always</CopyToPublishDirectory>
+			</Content>
+		</ItemGroup>
+	</Target>
+	
+</Project>

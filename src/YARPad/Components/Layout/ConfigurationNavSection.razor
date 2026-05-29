@@ -1,0 +1,79 @@
+@implements IDisposable
+@inject NavigationManager NavigationManager
+
+<MudNavGroup Title="Configuration" Icon="@IconResolver.Symbol.Configuration" Expanded="true">
+    <MudNavLink Href="routes" Match="NavLinkMatch.Prefix" Icon="@IconResolver.Symbol.Route">Routes</MudNavLink>
+    <MudNavLink Href="clusters" Match="NavLinkMatch.Prefix" Icon="@IconResolver.Symbol.Cluster">Clusters</MudNavLink>
+    <MudNavLink Href="custom-transforms" Match="NavLinkMatch.Prefix" Icon="@IconResolver.Symbol.CustomTransform">Custom Transforms</MudNavLink>
+    <MudNavGroup Title="Policies" Icon="@IconResolver.Symbol.Policy" Expanded="true">
+        @foreach (var policyContext in Enum.GetValues<PolicyContext>())
+        {
+            <MudNavGroup Title="@policyContext.HumanizeEnum()" Icon="@policyContext.ToIcon()" @bind-Expanded="@_policyContextExpanded[policyContext]">
+                @foreach (var policyType in policyContext.GetPolicyTypes())
+                {
+                    <MudNavLink Href="@($"policies/{policyType}")" Icon="@policyType.ToIcon()">@policyType.HumanizeEnum()</MudNavLink>
+                }
+            </MudNavGroup>
+        }
+    </MudNavGroup>
+</MudNavGroup>
+
+@code {
+    private readonly Dictionary<PolicyContext, bool> _policyContextExpanded = new();
+
+    protected override void OnInitialized()
+    {
+        InitializePolicyContextExpanded();
+        NavigationManager.LocationChanged += OnLocationChanged;
+    }
+
+    private void OnLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        UpdatePolicyContextExpanded();
+        StateHasChanged();
+    }
+
+    private void InitializePolicyContextExpanded()
+    {
+        foreach (var policyContext in Enum.GetValues<PolicyContext>())
+        {
+            _policyContextExpanded[policyContext] = ShouldExpandPolicyContext(policyContext);
+        }
+    }
+
+    private void UpdatePolicyContextExpanded()
+    {
+        foreach (var policyContext in Enum.GetValues<PolicyContext>())
+        {
+            if (ShouldExpandPolicyContext(policyContext))
+            {
+                _policyContextExpanded[policyContext] = true;
+            }
+        }
+    }
+
+    private bool ShouldExpandPolicyContext(PolicyContext policyContext)
+    {
+        var currentUri = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+
+        if (!currentUri.StartsWith("policies/", StringComparison.OrdinalIgnoreCase))
+        {
+            return false;
+        }
+
+        foreach (var policyType in policyContext.GetPolicyTypes())
+        {
+            if (currentUri.Equals($"policies/{policyType}", StringComparison.OrdinalIgnoreCase))
+            {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    public void Dispose()
+    {
+        NavigationManager.LocationChanged -= OnLocationChanged;
+    }
+}

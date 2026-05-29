@@ -1,0 +1,8 @@
+<TopToolTip Text="@Tooltips.Transforms_ResponseTrailersCopy_Field">
+    <MudSwitch T="bool" Label="ⓘ Copy All Response Trailers" @bind-Value="Transform.ResponseTrailersCopy" Color="@ColorResolver.Buttons.Switch" />
+</TopToolTip>
+
+@code {
+    [Parameter, EditorRequired]
+    public required ResponseTrailersCopyTransform Transform { get; set; }
+}

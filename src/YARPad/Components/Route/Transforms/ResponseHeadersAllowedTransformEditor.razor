@@ -1,0 +1,52 @@
+<MudStack Spacing="2">
+    <TopToolTip Text="@Tooltips.Transforms_ResponseHeadersAllowed_Field">
+        <MudField Label="ⓘ Allowed Headers" Variant="Variant.Outlined" Margin="Margin.Dense">
+            <MudChipSet T="string">
+                @foreach (var value in Transform.AllowedHeaders)
+                {
+                    <MudChip Value="@value"
+                             Text="@value"
+                             Color="@ColorResolver.Symbol.HeaderValue"
+                             Variant="Variant.Text"
+                             Size="Size.Small"
+                             OnClose="@((MudChip<string> c) => Transform.AllowedHeaders.Remove(c.Value!))" />
+                }
+            </MudChipSet>
+        </MudField>
+    </TopToolTip>
+
+    <MudTextField Label="Add Header"
+                  @bind-Value="_newValue"
+                  Variant="Variant.Outlined"
+                  Margin="Margin.Dense"
+                  Adornment="Adornment.End"
+                  AdornmentIcon="@IconResolver.Buttons.AddSubtle"
+                  Mask="@_headerCookieNameMask"
+                  OnAdornmentClick="AddValue"
+                  OnKeyDown="OnNewValueKeyDown" />
+</MudStack>
+
+@code {
+    private string _newValue = string.Empty;
+    private RegexMask _headerCookieNameMask = new RegexMask(RegexPatterns.HEADER_COOKIE_NAME);
+
+    [Parameter, EditorRequired]
+    public required ResponseHeadersAllowedTransform Transform { get; set; }
+
+    private void AddValue()
+    {
+        if (!string.IsNullOrWhiteSpace(_newValue) && !Transform.AllowedHeaders.Contains(_newValue))
+        {
+            Transform.AllowedHeaders.Add(_newValue);
+            _newValue = string.Empty;
+        }
+    }
+
+    private void OnNewValueKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            AddValue();
+        }
+    }
+}

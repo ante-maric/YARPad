@@ -1,0 +1,88 @@
+﻿@page "/clusters"
+
+@attribute [Authorize]
+@inherits StateComponentBase<CurrentConfigurationProfileState>
+
+@inject IYARPadConfigurationProvider ConfigurationProvider
+@inject IClusterEditorService ClusterEditorService
+
+<div style="max-width:900px;">
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIcon Icon="@IconResolver.Symbol.Cluster" Color="Color.Primary" Size="Size.Large" />
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.h4">Clusters</MudText>
+                <MudText Typo="Typo.caption">Named clusters describing destinations</MudText>
+            </MudStack>
+        </MudStack>
+
+        @if (State.SelectedProfile == null || State.SelectedProfile.Configuration.Clusters.Count == 0)
+        {
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudText Typo="Typo.body2">No clusters defined.</MudText>
+            </MudPaper>
+        }
+        else
+        {
+            @foreach (var cluster in State.SelectedProfile.Configuration.Clusters)
+            {
+                <ClusterCard Cluster="cluster"
+                             UsedBy="@GetUsedBy(cluster.ClusterID)"
+                             ConfigurationProfileID="State.SelectedProfile.ID"
+                             OnEdit="EditClusterAsync"
+                             OnClone="CloneClusterAsync"
+                             OnDelete="DeleteClusterAsync" />
+            }
+        }
+    </MudStack>
+</div>
+
+<MudFab Color="@ColorResolver.Buttons.AddSubtle" StartIcon="@IconResolver.Buttons.AddSubtle" Class="ma-4 fixed" Style="bottom: 0; right: 0;" OnClick="AddClusterAsync" />
+
+@code {
+    private async Task AddClusterAsync()
+    {
+        if (State.SelectedProfile == null)
+            return;
+
+        await ClusterEditorService.OpenAsync(State.SelectedProfile.ID, new ClusterModel() { ClusterID = "" });
+    }
+
+    private async Task EditClusterAsync(ClusterModel cluster)
+    {
+        if (State.SelectedProfile == null)
+            return;
+
+        await ClusterEditorService.OpenAsync(State.SelectedProfile.ID, cluster.DeepClone(), cluster.ClusterID);
+    }
+
+    private async Task CloneClusterAsync(ClusterModel cluster)
+    {
+        if (State.SelectedProfile == null)
+            return;
+
+        var clonedCluster = cluster.DeepClone();
+        clonedCluster.ClusterID += " Cloned";
+
+        await ClusterEditorService.OpenAsync(State.SelectedProfile.ID, clonedCluster);
+    }
+
+    private async Task DeleteClusterAsync(ClusterModel cluster)
+    {
+        if (State.SelectedProfile == null)
+            return;
+
+        await ConfigurationProvider.DeleteClusterAsync(State.SelectedProfile.ID, State.SelectedProfile.Configuration, cluster);
+    }
+
+    private List<string> GetUsedBy(string clusterID)
+    {
+        if (State.SelectedProfile == null)
+            return [];
+
+        return State.SelectedProfile.Configuration.Routes
+            .Where(x => x.ClusterID == clusterID)
+            .Select(x => x.RouteID)
+            .ToList();
+    }
+}

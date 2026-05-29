@@ -1,0 +1,60 @@
+<MudStack Spacing="2">
+    <TopToolTip Text="@Tooltips.Transforms_QueryRouteParameter_Name">
+        <MudTextField Label="ⓘ Query Parameter"
+                      @bind-Value="Transform.QueryRouteParameter"
+                      For="@(() => Transform.QueryRouteParameter)"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense" />
+    </TopToolTip>
+
+    <MudStack Row="true">
+
+        <TopToolTip Text="@Tooltips.Transforms_QueryRouteParameter_ChangeType" RootClass="mt-2">
+            <MudToggleGroup T="BasicTransformAction" @bind-Value="ActionType" Outlined="true" Delimiters="true" Size="Size.Medium" Color="@ColorResolver.Buttons.Toggle">
+                <MudToggleItem Value="@BasicTransformAction.Set">Replace</MudToggleItem>
+                <MudToggleItem Value="@BasicTransformAction.Append">Add</MudToggleItem>
+            </MudToggleGroup>
+        </TopToolTip>
+
+        @if (ActionType == BasicTransformAction.Set)
+        {
+            <TopToolTip Text="@Tooltips.Transforms_QueryRouteParameter_Set" RootClass="d-flex flex-grow-1">
+                <MudTextField Label="ⓘ Route parameter"
+                              @bind-Value="Transform.Set"
+                              For="@(() => Transform.Set)"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense" />
+            </TopToolTip>
+        }
+        else
+        {
+            <TopToolTip Text="@Tooltips.Transforms_QueryRouteParameter_Append" RootClass="d-flex flex-grow-1">
+                <MudTextField Label="ⓘ Route parameter"
+                              @bind-Value="Transform.Append"
+                              For="@(() => Transform.Append)"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense" />
+            </TopToolTip>
+        }
+    </MudStack>
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired]
+    public required QueryRouteParameterTransform Transform { get; set; }
+
+    private BasicTransformAction ActionType
+    {
+        get => Transform.Append != null ? BasicTransformAction.Append : BasicTransformAction.Set;
+        set
+        {
+            if (value == BasicTransformAction.Set)
+                Transform.Append = null;
+            else
+            {
+                Transform.Set = null;
+                Transform.Append = string.Empty;
+            }
+        }
+    }
+}

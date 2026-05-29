@@ -1,0 +1,173 @@
+@inject IDialogService DialogService
+
+<MudStack Spacing="2">
+    
+    @if (!IsEnabled)
+    {
+        <MudAlert Severity="Severity.Warning" Dense="true">
+            This configuration section is disabled. Enable it to allow edits.
+        </MudAlert>
+    }
+
+    <CustomInput T="List<RouteTransform>" For="@(() => Route.Transforms)">
+        <MudSimpleTable Dense="true" Hover="true" Outlined="true">
+            <thead>
+                <tr>
+                    <th>Type</th>
+                    <th>Details</th>
+                    <th style="width:1%; white-space:nowrap;text-align:center;">
+                        <MudMenu Icon="@IconResolver.Buttons.Add" Color="@ColorResolver.Buttons.Add" Dense="true" Size="Size.Small" Disabled="@(!IsEnabled)">
+                            @foreach (var transformGroup in GetTransformGroups().Where(x => x.Any()))
+                            {
+                                <MudMenu Label="@transformGroup.Key.HumanizeEnum()" StartIcon="@transformGroup.Key.ToIcon()" Class="@transformGroup.Key.ToColorClass()" Size="Size.Small" Dense="true">
+                                    @foreach (var transform in transformGroup.OrderBy(x => x))
+                                    {
+                                        <MudMenuItem Label="@transform.HumanizeTitle()" OnClick="@(() => AddTransformAsync(transform))" />
+                                    }
+                                </MudMenu>
+                            }
+                        </MudMenu>
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var transformItem in Route.Transforms)
+                {
+                    <tr>
+                        <td>
+                            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                                <MudIcon Icon="@transformItem.GetGroup().ToIcon()" Class="@transformItem.GetGroup().ToColorClass()" Size="Size.Small" />
+                                <MudText Typo="Typo.body2">@transformItem.Name</MudText>
+                            </MudStack>
+                        </td>
+                        <td>
+                            <MudText Typo="Typo.body2">@transformItem.GetTransformSummary()</MudText>
+                        </td>
+                        <td>
+                            <MudStack Row="true" Spacing="2" Justify="Justify.Center">
+                                <MudIconButton Icon="@IconResolver.Buttons.MoveUp"
+                                               Size="Size.Small"
+                                               Disabled="@(!CanMove(transformItem, -1) || !IsEnabled)"
+                                               OnClick="@(() => MoveTransform(transformItem, -1))" />
+                                <MudIconButton Icon="@IconResolver.Buttons.MoveDown"
+                                               Size="Size.Small"
+                                               Disabled="@(!CanMove(transformItem, 1) || !IsEnabled)"
+                                               OnClick="@(() => MoveTransform(transformItem, 1))" />
+                                <MudIconButton Icon="@IconResolver.Buttons.Edit"
+                                               Size="Size.Small"
+                                               Color="@ColorResolver.Buttons.Edit"
+                                               Disabled="@(!IsEnabled)"
+                                               OnClick="@(() => EditTransformAsync(transformItem))" />
+                                <MudIconButton Icon="@IconResolver.Buttons.Delete"
+                                               Size="Size.Small"
+                                               Color="@ColorResolver.Buttons.Delete"
+                                               Disabled="@(!IsEnabled)"
+                                               OnClick="@(() => RemoveTransform(transformItem))" />
+                            </MudStack>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    </CustomInput>
+
+    @if (Route.Transforms.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info" Dense="true">No transforms defined.</MudAlert>
+    }
+
+</MudStack>
+
+    @code {
+    [Parameter, EditorRequired]
+    public List<CustomTransformDefinition> CustomTransforms { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public required RouteModel Route { get; set; }
+
+    [Parameter, EditorRequired]
+    public bool IsEnabled { get; set; } = true;
+
+    private IEnumerable<IGrouping<RouteTransformGroup, string>> GetTransformGroups() => Enum.GetValues<RouteTransformType>()
+        .GroupBy(x => x.GetGroup(), x => x.ToString())
+        .Concat(CustomTransforms
+            .Select(x => x.Type)
+            .GroupBy(x => RouteTransformGroup.Other))
+        .OrderBy(x => x.Key);
+
+    private async Task AddTransformAsync(string transformType)
+    {
+        var transform = RouteTransformFactory.Create(transformType, CustomTransforms);
+        await OpenTransformDialogAsync(null, transform);
+    }
+
+    private async Task EditTransformAsync(RouteTransform transform)
+    {
+        var copy = RouteTransformFactory.Clone(transform);
+        await OpenTransformDialogAsync(transform, copy);
+    }
+
+    private async Task OpenTransformDialogAsync(RouteTransform? original, RouteTransform transformToEdit)
+    {
+        var options = new DialogOptions()
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+
+        var parameters = new DialogParameters<RouteTransformDialog>()
+        {
+            { x => x.Transform, transformToEdit },
+            { x => x.Route, Route }
+        };
+
+        var dialog = await DialogService.ShowAsync<RouteTransformDialog>(null, parameters, options);
+        var result = await dialog.Result;
+        if (result?.Canceled == true || result?.Data is not RouteTransform editedTransform)
+            return;
+
+        if (original == null)
+        {
+            Route.Transforms.Add(editedTransform);
+        }
+        else
+        {
+            var index = Route.Transforms.IndexOf(original);
+            if (index >= 0)
+                Route.Transforms[index] = editedTransform;
+            else
+                Route.Transforms.Add(editedTransform);
+        }
+    }
+
+    private void RemoveTransform(RouteTransform transform)
+    {
+        Route.Transforms.Remove(transform);
+    }
+
+    private bool CanMove(RouteTransform transform, int offset)
+    {
+        var index = Route.Transforms.IndexOf(transform);
+        if (index < 0)
+            return false;
+
+        var newIndex = index + offset;
+        return newIndex >= 0 && newIndex < Route.Transforms.Count;
+    }
+
+    private void MoveTransform(RouteTransform transform, int offset)
+    {
+        if (!CanMove(transform, offset))
+            return;
+
+        var index = Route.Transforms.IndexOf(transform);
+        var newIndex = index + offset;
+        Route.Transforms.RemoveAt(index);
+        Route.Transforms.Insert(newIndex, transform);
+    }
+
+    protected override Task OnInitializedAsync()
+    {
+        return base.OnInitializedAsync();
+    }
+}

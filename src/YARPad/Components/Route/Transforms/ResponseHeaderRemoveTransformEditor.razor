@@ -1,0 +1,23 @@
+<MudStack Spacing="2">
+    <TopToolTip Text="@Tooltips.Transforms_ResponseHeaderRemove_Name">
+        <MudTextField Label="ⓘ Remove Response Header"
+                      @bind-Value="Transform.ResponseHeaderRemove"
+                      For="@(() => Transform.ResponseHeaderRemove)"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense" />
+    </TopToolTip>
+
+    <TopToolTip Text="@Tooltips.Transforms_ResponseHeaderRemove_When">
+        <MudSelect Label="ⓘ When" @bind-Value="Transform.When" Variant="Variant.Outlined" Margin="Margin.Dense">
+            @foreach (ResponseTransformCondition item in Enum.GetValues(typeof(ResponseTransformCondition)))
+            {
+                <MudSelectItem Value="@((ResponseTransformCondition?)item)">@item.ToString()</MudSelectItem>
+            }
+        </MudSelect>
+    </TopToolTip>
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired]
+    public required ResponseHeaderRemoveTransform Transform { get; set; }
+}

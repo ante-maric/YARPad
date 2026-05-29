@@ -1,0 +1,78 @@
+@inject IPolicyValidatorFactory ValidatorFactory
+
+<MudDialog Class="border mud-border-primary-darken">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Policy Editor</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm @ref="_form" Model="@Policy" Validation="_validationHandler.ValidateAsync">
+            <MudStack Spacing="2">
+                <MudTextField
+                    Label="Identifier"
+                    @bind-Value="Policy.ID"
+                    For="@(() => Policy.ID)"
+                    Margin="Margin.Dense"
+                    Variant="Variant.Outlined" />
+                <MudTextField
+                    Label="Description"
+                    @bind-Value="Policy.Description"
+                    For="@(() => Policy.Description)"
+                    Margin="Margin.Dense"
+                    Lines="3"
+                    Variant="Variant.Outlined" />
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="@ColorResolver.Buttons.Save" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private MudForm? _form;
+    private MudValidator<PolicyInfo>? _validator;
+    private DeferredValidationHandler<PolicyInfo>? _validationHandler;
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public string? PolicyID { get; set; }
+
+    [Parameter, EditorRequired]
+    public PolicyType PolicyType { get; set; }
+
+    [Parameter, EditorRequired]
+    public required PolicyInfo Policy { get; set; }
+
+    private async Task Save()
+    {
+        if (_validationHandler == null || _form == null)
+            return;
+
+        Policy.Name = Policy.ID.HumanizeTitle();
+
+        await _validationHandler.ExecuteValidationAsync(() => _form.ValidateAsync());
+
+        if (!_form.IsValid)
+            return;
+
+        MudDialog.Close(DialogResult.Ok(Policy));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        _validator = ValidatorFactory.GetValidator(PolicyType);
+        _validator.ContextData[ValidatorContext.Policy.IS_EDITING] = true;
+        _validator.ContextData[ValidatorContext.Policy.ORIGINAL_ID] = PolicyID;
+
+        _validationHandler = new(_validator);
+    }
+}

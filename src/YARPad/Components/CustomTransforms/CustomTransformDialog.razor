@@ -1,0 +1,171 @@
+﻿@inject IDialogService DialogService
+@inject CustomTransformDefinitionValidator Validator
+
+<MudDialog Style="height: calc(100% - 64px);" Class="sticky-header-dialog border mud-border-primary-darken">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Custom Transform</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm @ref="_form"
+                 Model="@Transform"
+                 Validation="@_validationHandler.ValidateAsync">
+            <MudStack Spacing="2">
+                <MudTextField Label="Type"
+                              @bind-Value="Transform.Type"
+                              For="@(() => Transform.Type)"
+                              Variant="Variant.Outlined" />
+
+                <MudTextField Label="Description"
+                              @bind-Value="Transform.Description"
+                              For="@(() => Transform.Description)"
+                              Variant="Variant.Outlined" />
+
+                <CustomInput T="List<CustomTransformParameterDefinition>" For="@(() => Transform.Parameters)">
+                    <MudCard Outlined="true">
+                        <MudCardHeader>
+                            <CardHeaderContent>
+                                <TopToolTip Text="@Tooltips.CustomTransform_Parameters">
+                                    <MudText>ⓘ Parameters</MudText>
+                                </TopToolTip>
+                            </CardHeaderContent>
+                            <CardHeaderActions>
+                                <MudIconButton Icon="@IconResolver.Buttons.Add" Color="@ColorResolver.Buttons.Add" OnClick="AddParameterAsync" />
+                            </CardHeaderActions>
+                        </MudCardHeader>
+                        <MudCardContent>
+                            <MudStack Spacing="2">
+                                <MudSimpleTable Class="overflow-x-auto" Bordered="true" Outlined="true">
+                                    <thead>
+                                        <tr>
+                                            <th>Name</th>
+                                            <th>Description</th>
+                                            <th style="width:1%; white-space:nowrap; text-align:center;" />
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        @foreach (var parameter in Transform.Parameters)
+                                        {
+                                            <tr>
+                                                <td>
+                                                    <MudText>@parameter.Name</MudText>
+                                                </td>
+                                                <td>
+                                                    <MudText>@parameter.Description</MudText>
+                                                </td>
+                                                <td>
+                                                    <MudStack Row="true" Spacing="2" Justify="Justify.Center">
+                                                        <MudIconButton Icon="@IconResolver.Buttons.Edit" Color="@ColorResolver.Buttons.Edit" Size="Size.Small" OnClick="@(() => EditParameterAsync(parameter))" />
+                                                        <MudIconButton Icon="@IconResolver.Buttons.Delete" Color="@ColorResolver.Buttons.Delete" Size="Size.Small" OnClick="@(() => RemoveParameter(parameter))" />
+                                                    </MudStack>
+                                                </td>
+                                            </tr>
+                                        }
+                                    </tbody>
+                                </MudSimpleTable>
+                                @if (Transform.Parameters.Count == 0)
+                                {
+                                    <MudAlert Severity="Severity.Info" Dense="true">No parameters defined.</MudAlert>
+                                }
+                            </MudStack>
+                        </MudCardContent>
+                    </MudCard>
+                </CustomInput>
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="@ColorResolver.Buttons.Save" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private MudForm? _form;
+    private DeferredValidationHandler<CustomTransformDefinition>? _validationHandler;
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter]
+    public string? OriginalType { get; set; }
+
+    [Parameter, EditorRequired]
+    public required CustomTransformDefinition Transform { get; set; }
+
+    private async Task Save()
+    {
+        if (_validationHandler == null || _form == null)
+            return;
+
+        await _validationHandler.ExecuteValidationAsync(() => _form.ValidateAsync());
+
+        if (!_form.IsValid)
+            return;
+
+        MudDialog.Close(DialogResult.Ok(Transform));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    private async Task AddParameterAsync()
+    {
+        var parameter = new CustomTransformParameterDefinition() { Name = "" };
+        await OpenParameterDialogAsync(parameter, null);
+    }
+
+    private async Task EditParameterAsync(CustomTransformParameterDefinition parameter)
+    {
+        var clone = new CustomTransformParameterDefinition() { Name = parameter.Name, Description = parameter.Description };
+        await OpenParameterDialogAsync(clone, parameter.Name);
+    }
+
+    private async Task OpenParameterDialogAsync(CustomTransformParameterDefinition parameter, string? originalName)
+    {
+        var options = new DialogOptions()
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+        };
+
+        var parameters = new DialogParameters<CustomTransformParameterDialog>()
+        {
+            { x => x.Parameter, parameter },
+            { x => x.OriginalName, originalName },
+            { x => x.Transform, Transform }
+        };
+
+        var dialog = await DialogService.ShowAsync<CustomTransformParameterDialog>(null, parameters, options);
+        var result = await dialog.Result;
+
+        if (result == null || result.Canceled || result.Data is not CustomTransformParameterDefinition savedParameter)
+            return;
+
+        if (originalName == null)
+            Transform.Parameters.Add(savedParameter);
+        else
+        {
+            var index = Transform.Parameters.FindIndex(p => p.Name == originalName);
+            if (index >= 0)
+                Transform.Parameters[index] = savedParameter;
+            else
+                Transform.Parameters.Add(savedParameter);
+        }
+    }
+
+    private void RemoveParameter(CustomTransformParameterDefinition parameter) =>
+        Transform.Parameters.Remove(parameter);
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+        _validationHandler = new(Validator);
+    }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        Validator.ContextData[ValidatorContext.CustomTransform.ORIGINAL_TYPE] = OriginalType;
+    }
+}

@@ -1,0 +1,89 @@
+﻿<MudStack Spacing="2">
+    <TopToolTip Text="@Tooltips.Transforms_Forwarded_Name">
+        <CustomInput T="List<ForwardedTransformNode>" For="@(() => Transform.Forwarded)">
+            <MudField Label="ⓘ Forwarded" Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudChipSet T="ForwardedTransformNode"
+                            SelectedValues="Transform.Forwarded"
+                            SelectedValuesChanged="OnForwardedSelectionChanged"
+                            SelectionMode="SelectionMode.MultiSelection"
+                            CheckMark="true">
+                    @foreach (ForwardedTransformNode item in Enum.GetValues<ForwardedTransformNode>())
+                    {
+                        <TopToolTip Text="@item.ToHelpText()" Delay="0">
+                            <MudChip Value="@item"
+                                     Text="@item.ToString()"
+                                     Variant="Variant.Text"
+                                     Size="Size.Small"
+                                     Selected="@(Transform.Forwarded.Contains(item))" />
+                        </TopToolTip>
+                    }
+                </MudChipSet>
+            </MudField>
+        </CustomInput>
+    </TopToolTip>
+
+    @if (Transform.Forwarded.Contains(ForwardedTransformNode.For))
+    {
+        <TopToolTip Text="@Tooltips.Transforms_Forwarded_ForFormat">
+            <MudSelect Label="ⓘ For Format"
+                       @bind-Value="Transform.ForFormat"
+                       For="@(() => Transform.ForFormat)"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense">
+                @foreach (ForwardedNodeFormat item in Enum.GetValues<ForwardedNodeFormat>())
+                {
+                    <MudSelectItem Value="@((ForwardedNodeFormat?)item)">@item.HumanizeEnum()</MudSelectItem>
+                }
+            </MudSelect>
+        </TopToolTip>
+    }
+
+    @if (Transform.Forwarded.Contains(ForwardedTransformNode.By))
+    {
+        <TopToolTip Text="@Tooltips.Transforms_Forwarded_ByFormat">
+            <MudSelect Label="ⓘ By Format"
+                       @bind-Value="Transform.ByFormat"
+                       For="@(() => Transform.ByFormat)"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense">
+                @foreach (ForwardedNodeFormat item in Enum.GetValues<ForwardedNodeFormat>())
+                {
+                    <MudSelectItem Value="@((ForwardedNodeFormat?)item)">@item.HumanizeEnum()</MudSelectItem>
+                }
+            </MudSelect>
+        </TopToolTip>
+    }
+
+    <TopToolTip Text="@Tooltips.Transforms_Forwarded_Action">
+        <MudSelect Label="ⓘ Action"
+                   @bind-Value="Transform.Action"
+                   For="@(() => Transform.Action)"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   HelperText="@Transform.Action?.ToHelpText()">
+            @foreach (ForwardedTransformAction item in Enum.GetValues<ForwardedTransformAction>())
+            {
+                <MudSelectItem Value="@((ForwardedTransformAction?)item)">@item.HumanizeEnum()</MudSelectItem>
+            }
+        </MudSelect>
+    </TopToolTip>
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired]
+    public required ForwardedTransform Transform { get; set; }
+
+    private void OnForwardedSelectionChanged(IReadOnlyCollection<ForwardedTransformNode>? nodes)
+    {
+        if (nodes == null)
+            return;
+
+        Transform.Forwarded = nodes.ToList();
+
+        if (!Transform.Forwarded.Contains(ForwardedTransformNode.For))
+            Transform.ForFormat = null;
+
+        if (!Transform.Forwarded.Contains(ForwardedTransformNode.By))
+            Transform.ByFormat = null;
+    }
+}

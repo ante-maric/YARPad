@@ -1,0 +1,12 @@
+<TopToolTip Text="@Tooltips.Transforms_RequestHeaderRemove_Field">
+    <MudTextField Label="ⓘ Remove Request Header"
+                  @bind-Value="Transform.RequestHeaderRemove"
+                  For="@(() => Transform.RequestHeaderRemove)"
+                  Variant="Variant.Outlined"
+                  Margin="Margin.Dense" />
+</TopToolTip>
+
+@code {
+    [Parameter, EditorRequired]
+    public required RequestHeaderRemoveTransform Transform { get; set; }
+}

@@ -1,0 +1,48 @@
+@inject IClusterEditorService ClusterEditorService
+@inject IRouteEditorService RouteEditorService
+
+<MudTooltip Arrow="true" Placement="Placement.Left" Delay="1000">
+    <TooltipContent>
+        @((MarkupString)$"{Status.Status.ToHelpText()}<br/>{Status.ModifiedUTC.Humanize()}")
+    </TooltipContent>
+    <ChildContent>
+        @if (Status.Errors.Count == 0)
+        {
+            <MudIcon Icon="@Status.Status.ToIcon()" Color="@Status.Status.ToColor()" />
+        }
+        else
+        {
+            <MudMenu Icon="@Status.Status.ToIcon()" Color="@Status.Status.ToColor()" Dense="true" TransformOrigin="Origin.TopRight" AnchorOrigin="Origin.BottomRight">
+                @foreach (var entityErrors in Status.Errors)
+                {
+                    <MudMenuItem Icon="@entityErrors.Section.ToIcon()" Label="@entityErrors.EntityID" OnClick="() => EditEntityAsync(entityErrors)" />
+                    @foreach (var error in entityErrors.Errors)
+                    {
+                        <MudMenuItem OnClick="() => EditEntityAsync(entityErrors)">
+                            @((MarkupString)error.SplitToLines(50))
+                        </MudMenuItem>
+                    }
+                    <MudDivider />
+                }
+            </MudMenu>
+        }
+    </ChildContent>
+</MudTooltip>
+
+@code {
+    [Parameter, EditorRequired]
+    public required YarpConfigStatusState Status { get; set; }
+
+    private async Task EditEntityAsync(YarpValidationErrors entityErrors)
+    {
+        if (string.IsNullOrWhiteSpace(entityErrors.EntityID))
+            return;
+
+        await (entityErrors.Section switch
+        {
+            YarpConfigurationSection.Route => RouteEditorService.OpenAsync(Status.ConfigurationProfileID, entityErrors.EntityID, true).ContinueWith(t => (object?)t.Result),
+            YarpConfigurationSection.Cluster => ClusterEditorService.OpenAsync(Status.ConfigurationProfileID, entityErrors.EntityID, true).ContinueWith(t => (object?)t.Result),
+            _ => Task.FromResult<object?>(null)
+        });
+    }
+}

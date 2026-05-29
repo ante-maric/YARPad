@@ -1,0 +1,12 @@
+<TopToolTip Text="@Tooltips.Transforms_QueryRemoveParameter_Field">
+    <MudTextField Label="ⓘ Remove Query Parameter"
+                  @bind-Value="Transform.QueryRemoveParameter"
+                  For="@(() => Transform.QueryRemoveParameter)"
+                  Variant="Variant.Outlined"
+                  Margin="Margin.Dense" />
+</TopToolTip>
+
+@code {
+    [Parameter, EditorRequired]
+    public required QueryRemoveParameterTransform Transform { get; set; }
+}

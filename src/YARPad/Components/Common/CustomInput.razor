@@ -1,0 +1,24 @@
+﻿@typeparam T
+@inherits MudBaseInput<T>
+
+<MudInputControl Label="@Label"
+                 Variant="@Variant"
+                 HelperId="@GetHelperId()"
+                 HelperText="@HelperText"
+                 HelperTextOnFocus="@HelperTextOnFocus"
+                 FullWidth="@FullWidth"
+                 Error="@HasErrors"
+                 ErrorId="@ErrorIdState.Value"
+                 ErrorText="@GetErrorText()"
+                 Disabled="@GetDisabledState()"
+                 Margin="@Margin"
+                 Required="@Required"
+                 ForId="@InputElementId">
+    <InputContent>
+        @ChildContent
+    </InputContent>
+</MudInputControl>
+@code {
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+}

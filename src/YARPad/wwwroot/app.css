@@ -1,0 +1,628 @@
+html,
+body {
+  font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+a,
+.btn-link {
+  color: #006bb7;
+}
+
+.btn-primary {
+  color: #fff;
+  background-color: #1b6ec2;
+  border-color: #1861ac;
+}
+
+.btn:focus,
+.btn:active:focus,
+.btn-link.nav-link:focus,
+.form-control:focus,
+.form-check-input:focus {
+  box-shadow: 0 0 0 0.1rem white, 0 0 0 0.25rem #258cfb;
+}
+
+.content {
+  padding-top: 1.1rem;
+}
+
+h1:focus {
+  outline: none;
+}
+
+.valid.modified:not([type="checkbox"]) {
+  outline: 1px solid #26b050;
+}
+
+.invalid {
+  outline: 1px solid #e50000;
+}
+
+.validation-message {
+  color: #e50000;
+}
+
+.blazor-error-boundary {
+    background: url(data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iNTYiIGhlaWdodD0iNDkiIHhtbG5zPSJodHRwOi8vd3d3LnczLm9yZy8yMDAwL3N2ZyIgeG1sbnM6eGxpbms9Imh0dHA6Ly93d3cudzMub3JnLzE5OTkveGxpbmsiIG92ZXJmbG93PSJoaWRkZW4iPjxkZWZzPjxjbGlwUGF0aCBpZD0iY2xpcDAiPjxyZWN0IHg9IjIzNSIgeT0iNTEiIHdpZHRoPSI1NiIgaGVpZ2h0PSI0OSIvPjwvY2xpcFBhdGg+PC9kZWZzPjxnIGNsaXAtcGF0aD0idXJsKCNjbGlwMCkiIHRyYW5zZm9ybT0idHJhbnNsYXRlKC0yMzUgLTUxKSI+PHBhdGggZD0iTTI2My41MDYgNTFDMjY0LjcxNyA1MSAyNjUuODEzIDUxLjQ4MzcgMjY2LjYwNiA1Mi4yNjU4TDI2Ny4wNTIgNTIuNzk4NyAyNjcuNTM5IDUzLjYyODMgMjkwLjE4NSA5Mi4xODMxIDI5MC41NDUgOTIuNzk1IDI5MC42NTYgOTIuOTk2QzI5MC44NzcgOTMuNTEzIDI5MSA5NC4wODE1IDI5MSA5NC42NzgyIDI5MSA5Ny4wNjUxIDI4OS4wMzggOTkgMjg2LjYxNyA5OUwyNDAuMzgzIDk5QzIzNy45NjMgOTkgMjM2IDk3LjA2NTEgMjM2IDk0LjY3ODIgMjM2IDk0LjM3OTkgMjM2LjAzMSA5NC4wODg2IDIzNi4wODkgOTMuODA3MkwyMzYuMzM4IDkzLjAxNjIgMjM2Ljg1OCA5Mi4xMzE0IDI1OS40NzMgNTMuNjI5NCAyNTkuOTYxIDUyLjc5ODUgMjYwLjQwNyA1Mi4yNjU4QzI2MS4yIDUxLjQ4MzcgMjYyLjI5NiA1MSAyNjMuNTA2IDUxWk0yNjMuNTg2IDY2LjAxODNDMjYwLjczNyA2Ni4wMTgzIDI1OS4zMTMgNjcuMTI0NSAyNTkuMzEzIDY5LjMzNyAyNTkuMzEzIDY5LjYxMDIgMjU5LjMzMiA2OS44NjA4IDI1OS4zNzEgNzAuMDg4N0wyNjEuNzk1IDg0LjAxNjEgMjY1LjM4IDg0LjAxNjEgMjY3LjgyMSA2OS43NDc1QzI2Ny44NiA2OS43MzA5IDI2Ny44NzkgNjkuNTg3NyAyNjcuODc5IDY5LjMxNzkgMjY3Ljg3OSA2Ny4xMTgyIDI2Ni40NDggNjYuMDE4MyAyNjMuNTg2IDY2LjAxODNaTTI2My41NzYgODYuMDU0N0MyNjEuMDQ5IDg2LjA1NDcgMjU5Ljc4NiA4Ny4zMDA1IDI1OS43ODYgODkuNzkyMSAyNTkuNzg2IDkyLjI4MzcgMjYxLjA0OSA5My41Mjk1IDI2My41NzYgOTMuNTI5NSAyNjYuMTE2IDkzLjUyOTUgMjY3LjM4NyA5Mi4yODM3IDI2Ny4zODcgODkuNzkyMSAyNjcuMzg3IDg3LjMwMDUgMjY2LjExNiA4Ni4wNTQ3IDI2My41NzYgODYuMDU0N1oiIGZpbGw9IiNGRkU1MDAiIGZpbGwtcnVsZT0iZXZlbm9kZCIvPjwvZz48L3N2Zz4=) no-repeat 1rem/1.8rem, #b32121;
+    padding: 1rem 1rem 1rem 3.7rem;
+    color: white;
+}
+
+.blazor-error-boundary::after {
+  content: "An error has occurred.";
+}
+
+.darker-border-checkbox.form-check-input {
+  border-color: #929292;
+}
+
+.form-floating > .form-control-plaintext::placeholder,
+.form-floating > .form-control::placeholder {
+  color: var(--bs-secondary-color);
+  text-align: end;
+}
+
+.form-floating > .form-control-plaintext:focus::placeholder,
+.form-floating > .form-control:focus::placeholder {
+  text-align: start;
+}
+
+/*.mud-dialog.large-dialog {
+    width: 90vw !important;
+    height: 90vh !important;
+    max-width: none !important;
+    max-height: none !important;
+}*/
+
+.mud-dialog.transform-dialog {
+  /* Let small editor dialogs size to their content instead of reserving viewport height. */
+  max-height: none !important;
+  overflow-y: visible !important;
+}
+
+.mud-dialog.transform-dialog .mud-dialog-content {
+  flex: 0 0 auto;
+  overflow: visible !important;
+}
+
+.mud-dialog.sticky-header-dialog .mud-dialog-content {
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+/* ---- MudTabs: header fixed, panels fill & scroll ---- */
+.sticky-header-dialog .mud-tabs {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+/* tab header (what your HTML shows as .mud-tabs-tabbar) */
+.sticky-header-dialog .mud-tabs-tabbar,
+.sticky-header-dialog .mud-tabs-toolbar {
+  /* (covers other MudBlazor versions) */
+  flex: 0 0 auto; /* stay visible */
+}
+
+/* panels container */
+.sticky-header-dialog .mud-tabs-panels {
+  flex: 1 1 auto; /* take remaining space */
+  min-height: 0; /* critical for overflow to work */
+  display: flex; /* so the active panel can flex */
+  flex-direction: column;
+  overflow: hidden; /* the panel itself will scroll */
+}
+
+/* the active panel should be the flex item that scrolls */
+.sticky-header-dialog .mud-tabs-panels > .mud-tab-panel {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto; /* <-- only panel content scrolls */
+}
+
+.thin-expand-header {
+  padding: 4px 0px !important;
+  min-height: unset !important;
+}
+
+.flex-basis-0 {
+  flex-basis: 0 !important;
+}
+
+.mud-icon-size-small[class*="fa-"] {
+  font-size: 14px !important;
+  width: 14px !important;
+  height: 14px !important;
+  margin: 2px !important;
+}
+
+.mud-icon-size-medium[class*="fa-"] {
+  font-size: 20px !important;
+  width: 20px !important;
+  height: 20px !important;
+  margin: 2px !important;
+}
+
+.mud-menu-item > .mud-icon-size-medium[class*="fa-"] {
+    margin-right: 12px !important; /* or whatever margin you want */
+}
+
+.mud-icon-size-large[class*="fa-"] {
+  font-size: 30px !important;
+  width: 30px !important;
+  height: 30px !important;
+  margin: 3px !important;
+}
+
+.mud-nav-link.active {
+    background-color: var(--mud-palette-background) !important;
+}
+
+.mud-border-primary-darken {
+    border-color: var(--mud-palette-primary-darken) !important;
+}
+
+.mud-border-primary-lighten {
+    border-color: var(--mud-palette-primary-lighten) !important;
+}
+
+.mud-border-surface {
+    border-color: var(--mud-palette-surface) !important;
+}
+
+/* MudChip custom colors */
+.mud-chip.yarpad-chip-color-custom {
+  --chip-fg: var(--mud-palette-text-primary);
+  --chip-bg: var(--mud-palette-action-disabled-background);
+  --chip-bg-hover: var(--mud-palette-action-disabled);
+  --chip-border: var(--mud-palette-lines-inputs);
+  --chip-filled-bg: var(--mud-palette-action-disabled-background);
+  --chip-filled-text: var(--mud-palette-text-primary);
+}
+
+.mud-chip-filled.yarpad-chip-color-custom {
+  color: var(--chip-filled-text);
+  background-color: var(--chip-filled-bg);
+  --mud-ripple-color: var(--chip-filled-text) !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mud-chip-filled.yarpad-chip-color-custom.mud-clickable:hover:not(.mud-disabled) {
+    background-color: var(--chip-bg-hover);
+  }
+}
+
+.mud-chip-filled.yarpad-chip-color-custom.mud-clickable:focus-visible:not(.mud-disabled),
+.mud-chip-filled.yarpad-chip-color-custom.mud-clickable:active:not(.mud-disabled) {
+  background-color: var(--chip-bg-hover);
+}
+
+.mud-chip-outlined.yarpad-chip-color-custom {
+  color: var(--chip-fg);
+  border: 1px solid var(--chip-border);
+  --mud-ripple-color: var(--chip-fg) !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mud-chip-outlined.yarpad-chip-color-custom.mud-clickable:hover:not(.mud-disabled) {
+    background-color: var(--chip-bg);
+  }
+}
+
+.mud-chip-outlined.yarpad-chip-color-custom.mud-clickable:focus-visible:not(.mud-disabled),
+.mud-chip-outlined.yarpad-chip-color-custom.mud-clickable:active:not(.mud-disabled),
+.mud-chip-outlined.yarpad-chip-color-custom.mud-chip-selected {
+  background-color: var(--chip-bg);
+}
+
+.mud-chip-text.yarpad-chip-color-custom {
+  color: var(--chip-fg);
+  background-color: var(--chip-bg);
+  --mud-ripple-color: var(--chip-fg) !important;
+}
+
+@media (hover: hover) and (pointer: fine) {
+  .mud-chip-text.yarpad-chip-color-custom.mud-clickable:hover:not(.mud-disabled) {
+    background-color: var(--chip-bg-hover);
+  }
+}
+
+.mud-chip-text.yarpad-chip-color-custom.mud-clickable:focus-visible:not(.mud-disabled),
+.mud-chip-text.yarpad-chip-color-custom.mud-clickable:active:not(.mud-disabled) {
+  background-color: var(--chip-bg-hover);
+}
+
+.yarpad-chip-color-get {
+    --chip-fg: rgb(97, 175, 254) !important;
+    --chip-bg: rgba(97, 175, 254, 0.12) !important;
+    --chip-bg-hover: rgba(97, 175, 254, 0.24) !important;
+    --chip-border: rgba(97, 175, 254, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(97, 175, 254) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-chip-color-post {
+    --chip-fg: rgb(73, 204, 144) !important;
+    --chip-bg: rgba(73, 204, 144, 0.12) !important;
+    --chip-bg-hover: rgba(73, 204, 144, 0.24) !important;
+    --chip-border: rgba(73, 204, 144, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(73, 204, 144) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-chip-color-put {
+    --chip-fg: rgb(252, 161, 48) !important;
+    --chip-bg: rgba(252, 161, 48, 0.12) !important;
+    --chip-bg-hover: rgba(252, 161, 48, 0.24) !important;
+    --chip-border: rgba(252, 161, 48, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(252, 161, 48) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-chip-color-delete {
+    --chip-fg: rgb(249, 62, 62) !important;
+    --chip-bg: rgba(249, 62, 62, 0.12) !important;
+    --chip-bg-hover: rgba(249, 62, 62, 0.24) !important;
+    --chip-border: rgba(249, 62, 62, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(249, 62, 62) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-chip-color-patch {
+    --chip-fg: rgb(80, 227, 194) !important;
+    --chip-bg: rgba(80, 227, 194, 0.12) !important;
+    --chip-bg-hover: rgba(80, 227, 194, 0.24) !important;
+    --chip-border: rgba(80, 227, 194, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(80, 227, 194) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-chip-color-options {
+    --chip-fg: rgb(13, 90, 167) !important;
+    --chip-bg: rgba(13, 90, 167, 0.12) !important;
+    --chip-bg-hover: rgba(13, 90, 167, 0.24) !important;
+    --chip-border: rgba(13, 90, 167, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(13, 90, 167) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-chip-color-head {
+    --chip-fg: rgb(144, 18, 254) !important;
+    --chip-bg: rgba(144, 18, 254, 0.12) !important;
+    --chip-bg-hover: rgba(144, 18, 254, 0.24) !important;
+    --chip-border: rgba(144, 18, 254, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(144, 18, 254) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-chip-color-trace {
+    --chip-fg: rgb(153, 153, 153) !important;
+    --chip-bg: rgba(153, 153, 153, 0.12) !important;
+    --chip-bg-hover: rgba(153, 153, 153, 0.24) !important;
+    --chip-border: rgba(153, 153, 153, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(153, 153, 153) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-theme-dark .yarpad-chip-color-gray {
+    --chip-fg: rgb(156, 163, 175) !important;
+    --chip-bg: rgba(156, 163, 175, 0.12) !important;
+    --chip-bg-hover: rgba(156, 163, 175, 0.24) !important;
+    --chip-border: rgba(156, 163, 175, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(156, 163, 175) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-theme-light .yarpad-chip-color-gray {
+    --chip-fg: rgb(75, 85, 99) !important;
+    --chip-bg: rgba(75, 85, 99, 0.12) !important;
+    --chip-bg-hover: rgba(75, 85, 99, 0.24) !important;
+    --chip-border: rgba(75, 85, 99, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(75, 85, 99) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-theme-dark .yarpad-chip-color-purple {
+    --chip-fg: rgb(192, 132, 252) !important;
+    --chip-bg: rgba(192, 132, 252, 0.12) !important;
+    --chip-bg-hover: rgba(192, 132, 252, 0.24) !important;
+    --chip-border: rgba(192, 132, 252, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(192, 132, 252) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-theme-light .yarpad-chip-color-purple {
+    --chip-fg: rgb(126, 34, 206) !important;
+    --chip-bg: rgba(126, 34, 206, 0.12) !important;
+    --chip-bg-hover: rgba(126, 34, 206, 0.24) !important;
+    --chip-border: rgba(126, 34, 206, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(126, 34, 206) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-theme-dark .yarpad-chip-color-blue {
+    --chip-fg: rgb(96, 165, 250) !important;
+    --chip-bg: rgba(96, 165, 250, 0.12) !important;
+    --chip-bg-hover: rgba(96, 165, 250, 0.24) !important;
+    --chip-border: rgba(96, 165, 250, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(96, 165, 250) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-theme-light .yarpad-chip-color-blue {
+    --chip-fg: rgb(29, 78, 216) !important;
+    --chip-bg: rgba(29, 78, 216, 0.12) !important;
+    --chip-bg-hover: rgba(29, 78, 216, 0.24) !important;
+    --chip-border: rgba(29, 78, 216, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(29, 78, 216) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-theme-dark .yarpad-chip-color-green {
+    --chip-fg: rgb(52, 211, 153) !important;
+    --chip-bg: rgba(52, 211, 153, 0.12) !important;
+    --chip-bg-hover: rgba(52, 211, 153, 0.24) !important;
+    --chip-border: rgba(52, 211, 153, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(52, 211, 153) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-theme-light .yarpad-chip-color-green {
+    --chip-fg: rgb(21, 128, 61) !important;
+    --chip-bg: rgba(21, 128, 61, 0.12) !important;
+    --chip-bg-hover: rgba(21, 128, 61, 0.24) !important;
+    --chip-border: rgba(21, 128, 61, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(21, 128, 61) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-theme-dark .yarpad-chip-color-orange {
+    --chip-fg: rgb(251, 191, 36) !important;
+    --chip-bg: rgba(251, 191, 36, 0.12) !important;
+    --chip-bg-hover: rgba(251, 191, 36, 0.24) !important;
+    --chip-border: rgba(251, 191, 36, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(251, 191, 36) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-theme-light .yarpad-chip-color-orange {
+    --chip-fg: rgb(217, 119, 6) !important;
+    --chip-bg: rgba(217, 119, 6, 0.12) !important;
+    --chip-bg-hover: rgba(217, 119, 6, 0.24) !important;
+    --chip-border: rgba(217, 119, 6, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(217, 119, 6) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-theme-dark .yarpad-chip-color-red {
+    --chip-fg: rgb(248, 113, 113) !important;
+    --chip-bg: rgba(248, 113, 113, 0.12) !important;
+    --chip-bg-hover: rgba(248, 113, 113, 0.24) !important;
+    --chip-border: rgba(248, 113, 113, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(248, 113, 113) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-theme-light .yarpad-chip-color-red {
+    --chip-fg: rgb(185, 28, 28) !important;
+    --chip-bg: rgba(185, 28, 28, 0.12) !important;
+    --chip-bg-hover: rgba(185, 28, 28, 0.24) !important;
+    --chip-border: rgba(185, 28, 28, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(185, 28, 28) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-theme-dark .yarpad-chip-color-teal {
+    --chip-fg: rgb(45, 212, 191) !important;
+    --chip-bg: rgba(45, 212, 191, 0.12) !important;
+    --chip-bg-hover: rgba(45, 212, 191, 0.24) !important;
+    --chip-border: rgba(45, 212, 191, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(45, 212, 191) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-theme-light .yarpad-chip-color-teal {
+    --chip-fg: rgb(15, 118, 110) !important;
+    --chip-bg: rgba(15, 118, 110, 0.12) !important;
+    --chip-bg-hover: rgba(15, 118, 110, 0.24) !important;
+    --chip-border: rgba(15, 118, 110, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(15, 118, 110) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-theme-dark .yarpad-chip-color-cyan {
+    --chip-fg: rgb(34, 211, 238) !important;
+    --chip-bg: rgba(34, 211, 238, 0.12) !important;
+    --chip-bg-hover: rgba(34, 211, 238, 0.24) !important;
+    --chip-border: rgba(34, 211, 238, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(34, 211, 238) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-theme-light .yarpad-chip-color-cyan {
+    --chip-fg: rgb(14, 116, 144) !important;
+    --chip-bg: rgba(14, 116, 144, 0.12) !important;
+    --chip-bg-hover: rgba(14, 116, 144, 0.24) !important;
+    --chip-border: rgba(14, 116, 144, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(14, 116, 144) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-theme-dark .yarpad-chip-color-indigo {
+    --chip-fg: rgb(129, 140, 248) !important;
+    --chip-bg: rgba(129, 140, 248, 0.12) !important;
+    --chip-bg-hover: rgba(129, 140, 248, 0.24) !important;
+    --chip-border: rgba(129, 140, 248, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(129, 140, 248) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-theme-light .yarpad-chip-color-indigo {
+    --chip-fg: rgb(67, 56, 202) !important;
+    --chip-bg: rgba(67, 56, 202, 0.12) !important;
+    --chip-bg-hover: rgba(67, 56, 202, 0.24) !important;
+    --chip-border: rgba(67, 56, 202, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(67, 56, 202) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-theme-dark .yarpad-chip-color-lime {
+    --chip-fg: rgb(163, 230, 53) !important;
+    --chip-bg: rgba(163, 230, 53, 0.12) !important;
+    --chip-bg-hover: rgba(163, 230, 53, 0.24) !important;
+    --chip-border: rgba(163, 230, 53, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(163, 230, 53) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-theme-light .yarpad-chip-color-lime {
+    --chip-fg: rgb(77, 124, 15) !important;
+    --chip-bg: rgba(77, 124, 15, 0.12) !important;
+    --chip-bg-hover: rgba(77, 124, 15, 0.24) !important;
+    --chip-border: rgba(77, 124, 15, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(77, 124, 15) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-theme-dark .yarpad-chip-color-yellow {
+    --chip-fg: rgb(253, 224, 71) !important;
+    --chip-bg: rgba(253, 224, 71, 0.12) !important;
+    --chip-bg-hover: rgba(253, 224, 71, 0.24) !important;
+    --chip-border: rgba(253, 224, 71, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(253, 224, 71) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-theme-light .yarpad-chip-color-yellow {
+    --chip-fg: rgb(161, 98, 7) !important;
+    --chip-bg: rgba(161, 98, 7, 0.12) !important;
+    --chip-bg-hover: rgba(161, 98, 7, 0.24) !important;
+    --chip-border: rgba(161, 98, 7, var(--mud-palette-border-opacity)) !important;
+    --chip-filled-bg: rgb(161, 98, 7) !important;
+    --chip-filled-text: #fff !important;
+}
+
+.yarpad-theme-light .yarpad-color-gray .mud-icon-root,
+.yarpad-theme-light .yarpad-color-gray.mud-icon-root {
+    color: #6B7280 !important;
+}
+
+.yarpad-theme-light .yarpad-color-purple .mud-icon-root,
+.yarpad-theme-light .yarpad-color-purple.mud-icon-root {
+    color: #A855F7 !important;
+}
+
+.yarpad-theme-light .yarpad-color-blue .mud-icon-root,
+.yarpad-theme-light .yarpad-color-blue.mud-icon-root {
+    color: #2563EB !important;
+}
+
+.yarpad-theme-light .yarpad-color-green .mud-icon-root,
+.yarpad-theme-light .yarpad-color-green.mud-icon-root {
+    color: #16A34A !important;
+}
+
+.yarpad-theme-light .yarpad-color-orange .mud-icon-root,
+.yarpad-theme-light .yarpad-color-orange.mud-icon-root {
+    color: #F59E0B !important;
+}
+
+.yarpad-theme-light .yarpad-color-red .mud-icon-root,
+.yarpad-theme-light .yarpad-color-red.mud-icon-root {
+    color: #DC2626 !important;
+}
+
+.yarpad-theme-light .yarpad-color-teal .mud-icon-root,
+.yarpad-theme-light .yarpad-color-teal.mud-icon-root {
+    color: #0D9488 !important;
+}
+
+.yarpad-theme-light .yarpad-color-cyan .mud-icon-root,
+.yarpad-theme-light .yarpad-color-cyan.mud-icon-root {
+    color: #0891B2 !important;
+}
+
+.yarpad-theme-light .yarpad-color-indigo .mud-icon-root,
+.yarpad-theme-light .yarpad-color-indigo.mud-icon-root {
+    color: #4F46E5 !important;
+}
+
+.yarpad-theme-light .yarpad-color-lime .mud-icon-root,
+.yarpad-theme-light .yarpad-color-lime.mud-icon-root {
+    color: #65A30D !important;
+}
+
+.yarpad-theme-light .yarpad-color-yellow .mud-icon-root,
+.yarpad-theme-light .yarpad-color-yellow.mud-icon-root {
+    color: #A16207 !important;
+}
+
+.yarpad-theme-dark .yarpad-color-gray .mud-icon-root,
+.yarpad-theme-dark .yarpad-color-gray.mud-icon-root {
+    color: #9CA3AF !important;
+}
+
+.yarpad-theme-dark .yarpad-color-purple .mud-icon-root,
+.yarpad-theme-dark .yarpad-color-purple.mud-icon-root {
+    color: #C084FC !important;
+}
+
+.yarpad-theme-dark .yarpad-color-blue .mud-icon-root,
+.yarpad-theme-dark .yarpad-color-blue.mud-icon-root {
+    color: #60A5FA !important;
+}
+
+.yarpad-theme-dark .yarpad-color-green .mud-icon-root,
+.yarpad-theme-dark .yarpad-color-green.mud-icon-root {
+    color: #34D399 !important;
+}
+
+.yarpad-theme-dark .yarpad-color-orange .mud-icon-root,
+.yarpad-theme-dark .yarpad-color-orange.mud-icon-root {
+    color: #FBBF24 !important;
+}
+
+.yarpad-theme-dark .yarpad-color-red .mud-icon-root,
+.yarpad-theme-dark .yarpad-color-red.mud-icon-root {
+    color: #F87171 !important;
+}
+
+.yarpad-theme-dark .yarpad-color-teal .mud-icon-root,
+.yarpad-theme-dark .yarpad-color-teal.mud-icon-root {
+    color: #2DD4BF !important;
+}
+
+.yarpad-theme-dark .yarpad-color-cyan .mud-icon-root,
+.yarpad-theme-dark .yarpad-color-cyan.mud-icon-root {
+    color: #22D3EE !important;
+}
+
+.yarpad-theme-dark .yarpad-color-indigo .mud-icon-root,
+.yarpad-theme-dark .yarpad-color-indigo.mud-icon-root {
+    color: #818CF8 !important;
+}
+
+.yarpad-theme-dark .yarpad-color-lime .mud-icon-root,
+.yarpad-theme-dark .yarpad-color-lime.mud-icon-root {
+    color: #A3E635 !important;
+}
+
+.yarpad-theme-dark .yarpad-color-yellow .mud-icon-root,
+.yarpad-theme-dark .yarpad-color-yellow.mud-icon-root {
+    color: #FDE047 !important;
+}
+
+.logo-yar-font {
+    font-weight: 700 !important;
+    font-size: 1.5em !important;
+}
+
+.logo-p-font {
+    font-size: 2.2em !important;
+    font-family: "Black Ops One", system-ui !important;
+}
+
+.logo-ad-font {
+    font-family: "Black Ops One", system-ui !important;
+}

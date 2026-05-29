@@ -1,0 +1,146 @@
+﻿@using System.Security.Authentication
+@using System.Text
+
+@if (!IsEnabled)
+{
+    <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-4">
+        This configuration section is disabled. Enable it to allow edits.
+    </MudAlert>
+}
+
+<MudGrid Spacing="4">
+    <MudItem xs="6">
+        <MudCard Outlined="true">
+            <MudCardHeader>
+                <MudText Typo="Typo.subtitle1">Main</MudText>
+            </MudCardHeader>
+            <MudCardContent Class="pt-0">
+                <MudStack Spacing="2">
+                    <TopToolTip Text="@Tooltips.HttpClient_SslProtocols">
+                        <MudSelect T="SslProtocols"
+                                   Label="ⓘ SSL Protocols"
+                                   @bind-SelectedValues="HttpClient.SslProtocols"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   Dense="true"
+                                   Margin="Margin.Dense"
+                                   MultiSelection="true"
+                                   Disabled="@(!IsEnabled)">
+                            @foreach (var protocol in Enum.GetValues<SslProtocols>())
+                            {
+                                <MudSelectItem Value="@protocol">@protocol.HumanizeEnum()</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </TopToolTip>
+                    <TopToolTip Text="@Tooltips.HttpClient_DangerousAcceptAnyServerCertificate">
+                        <MudCheckBox Label="ⓘ Dangerous Accept Any Server Certificate"
+                                     @bind-Value="HttpClient.DangerousAcceptAnyServerCertificate"
+                                     For="@(() => Cluster.HttpClient.DangerousAcceptAnyServerCertificate)"
+                                     Dense="true"
+                                     Disabled="@(!IsEnabled)" />
+                    </TopToolTip>
+                    <TopToolTip Text="@Tooltips.HttpClient_MaxConnectionsPerServer">
+                        <MudNumericField Label="ⓘ Max Connections Per Server"
+                                         @bind-Value="HttpClient.MaxConnectionsPerServer"
+                                         For="@(() => Cluster.HttpClient.MaxConnectionsPerServer)"
+                                         Variant="Variant.Outlined"
+                                         Margin="Margin.Dense"
+                                         Min="1"
+                                         Disabled="@(!IsEnabled)" />
+                    </TopToolTip>
+                    <TopToolTip Text="@Tooltips.HttpClient_EnableMultipleHttp2Connections">
+                        <MudCheckBox Label="ⓘ Enable Multiple HTTP/2 Connections"
+                                     @bind-Value="HttpClient.EnableMultipleHttp2Connections"
+                                     For="@(() => Cluster.HttpClient.EnableMultipleHttp2Connections)"
+                                     Dense="true"
+                                     Disabled="@(!IsEnabled)" />
+                    </TopToolTip>
+                    <TopToolTip Text="@Tooltips.HttpClient_RequestHeaderEncoding">
+                        <MudSelect Label="ⓘ Request Header Encoding"
+                                   @bind-Value="HttpClient.RequestHeaderEncoding"
+                                   For="@(() => Cluster.HttpClient.RequestHeaderEncoding)"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   Dense="true"
+                                   Margin="Margin.Dense"
+                                   Disabled="@(!IsEnabled)">
+                            @foreach (var encoding in Encoding.GetEncodings())
+                            {
+                                <MudSelectItem Value="@encoding.Name">@encoding.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </TopToolTip>
+                    <TopToolTip Text="@Tooltips.HttpClient_ResponseHeaderEncoding">
+                        <MudSelect Label="ⓘ Response Header Encoding"
+                                   @bind-Value="HttpClient.ResponseHeaderEncoding"
+                                   For="@(() => Cluster.HttpClient.ResponseHeaderEncoding)"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   Dense="true"
+                                   Margin="Margin.Dense"
+                                   Disabled="@(!IsEnabled)">
+                            @foreach (var encoding in Encoding.GetEncodings())
+                            {
+                                <MudSelectItem Value="@encoding.Name">@encoding.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </TopToolTip>
+
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+    <MudItem xs="6">
+        <MudCard Outlined="true">
+            <MudCardHeader>
+                <MudText Typo="Typo.subtitle1">Web Proxy</MudText>
+            </MudCardHeader>
+            <MudCardContent Class="pt-0">
+                <MudStack Spacing="2">
+
+                    <TopToolTip Text="@Tooltips.HttpClient_WebProxy_Address">
+                        <MudTextField Label="ⓘ Address"
+                                      @bind-Value="HttpClient.WebProxy.Address"
+                                      For="@(() => Cluster.HttpClient.WebProxy.Address)"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Disabled="@(!IsEnabled)" />
+                    </TopToolTip>
+                    <TopToolTip Text="@Tooltips.HttpClient_WebProxy_BypassOnLocal">
+                        <MudCheckBox Label="ⓘ Bypass On Local"
+                                     @bind-Value="HttpClient.WebProxy.BypassOnLocal"
+                                     For="@(() => Cluster.HttpClient.WebProxy.BypassOnLocal)"
+                                     Dense="true"
+                                     Disabled="@(!IsEnabled)" />
+                    </TopToolTip>
+                    <TopToolTip Text="@Tooltips.HttpClient_WebProxy_UseDefaultCredentials">
+                        <MudCheckBox Label="ⓘ Use Default Credentials"
+                                     @bind-Value="HttpClient.WebProxy.UseDefaultCredentials"
+                                     For="@(() => Cluster.HttpClient.WebProxy.UseDefaultCredentials)"
+                                     Dense="true"
+                                     Disabled="@(!IsEnabled)" />
+                    </TopToolTip>
+
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+@code {
+    [CascadingParameter]
+    private ClusterModel Cluster { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public required HttpClientModel HttpClient { get; set; }
+
+    [Parameter, EditorRequired]
+    public bool IsEnabled { get; set; }
+
+    private static async Task<IEnumerable<string?>> SearchEncodings(string search, CancellationToken cancellationToken)
+    {
+        return Encoding.GetEncodings()
+            .Where(x => x.Name.StartsWith(search ?? "", StringComparison.InvariantCultureIgnoreCase))
+            .Take(1000)
+            .Select(x => x.Name);
+    }
+}

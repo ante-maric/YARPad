@@ -1,0 +1,58 @@
+﻿<div class="mb-4">
+    @if (Context != null)
+    {
+        <a href="" @onclick:preventDefault @onclick="LinkClicked"><span class="field">@Name</span></a>
+    }
+    else
+    {
+        <MudText Typo="Typo.caption" Align="@Align">@Name</MudText>
+    }
+
+    @if (ChildContent == null || !HasData)
+    {
+        <MudText Typo="Typo.subtitle1" Align="@Align">
+            @if(Value == null)
+            {
+                <i>None</i>
+            }
+            else
+            {
+                @Value
+            }
+        </MudText>
+    }
+    else
+    {
+        <div>
+            @ChildContent
+        </div>
+    }
+</div>
+
+@code {
+    [Parameter]
+    public string? Name { get; set; }
+
+    [Parameter]
+    public string? Value { get; set; }
+
+    [Parameter]
+    public object? Context { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public Align Align { get; set; }
+
+    [Parameter]
+    public EventCallback<object?> OnLinkClicked { get; set; }
+
+    [Parameter]
+    public bool HasData { get; set; } = true;
+
+    private void LinkClicked()
+    {
+        OnLinkClicked.InvokeAsync(Context);
+    }
+}

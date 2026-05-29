@@ -1,0 +1,153 @@
+@using CodingCell.YARPad.Components.Route.Transforms
+
+@inject RouteTransformValidator Validator
+
+<MudDialog Class="transform-dialog border mud-border-primary-darken">
+    <TitleContent>
+        <MudText Typo="Typo.h6">@Transform.Name</MudText>
+        <MudText Typo="Typo.caption">@Transform.Description</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm @ref="_form" Model="@Transform" Validation="_validationHandler.ValidateAsync">
+            <CustomInput T="RouteTransform" For="@(() => Transform)">
+                @switch (Transform)
+                {
+                    case RequestHeadersCopyTransform requestHeadersCopy:
+                        <RequestHeadersCopyTransformEditor Transform="requestHeadersCopy" />
+                        break;
+                    case RequestHeaderTransform requestHeader:
+                        <RequestHeaderTransformEditor Transform="requestHeader" />
+                        break;
+                    case RequestHeaderOriginalHostTransform requestHeaderOriginalHost:
+                        <RequestHeaderOriginalHostTransformEditor Transform="requestHeaderOriginalHost" />
+                        break;
+                    case PathRemovePrefixTransform pathRemovePrefix:
+                        <PathRemovePrefixTransformEditor Transform="pathRemovePrefix" />
+                        break;
+                    case PathSetTransform pathSet:
+                        <PathSetTransformEditor Transform="pathSet" />
+                        break;
+                    case PathPrefixTransform pathPrefix:
+                        <PathPrefixTransformEditor Transform="pathPrefix" />
+                        break;
+                    case QueryRouteParameterTransform queryRouteParameter:
+                        <QueryRouteParameterTransformEditor Transform="queryRouteParameter" />
+                        break;
+                    case PathPatternTransform pathPattern:
+                        <PathPatternTransformEditor Transform="pathPattern" />
+                        break;
+                    case QueryValueParameterTransform queryValueParameter:
+                        <QueryValueParameterTransformEditor Transform="queryValueParameter" />
+                        break;
+                    case QueryRemoveParameterTransform queryRemoveParameter:
+                        <QueryRemoveParameterTransformEditor Transform="queryRemoveParameter" />
+                        break;
+                    case HttpMethodChangeTransform httpMethodChange:
+                        <HttpMethodChangeTransformEditor Transform="httpMethodChange" />
+                        break;
+                    case RequestHeaderRouteValueTransform requestHeaderRouteValue:
+                        <RequestHeaderRouteValueTransformEditor Transform="requestHeaderRouteValue" />
+                        break;
+                    case RequestHeaderRemoveTransform requestHeaderRemove:
+                        <RequestHeaderRemoveTransformEditor Transform="requestHeaderRemove" />
+                        break;
+                    case RequestHeadersAllowedTransform requestHeadersAllowed:
+                        <RequestHeadersAllowedTransformEditor Transform="requestHeadersAllowed" />
+                        break;
+                    case ForwardedTransform forwarded:
+                        <ForwardedTransformEditor Transform="forwarded" />
+                        break;
+                    case XForwardedTransform xForwarded:
+                        <XForwardedTransformEditor Transform="xForwarded" />
+                        break;
+                    case ClientCertTransform clientCert:
+                        <ClientCertTransformEditor Transform="clientCert" />
+                        break;
+                    case ResponseHeadersCopyTransform responseHeadersCopy:
+                        <ResponseHeadersCopyTransformEditor Transform="responseHeadersCopy" />
+                        break;
+                    case ResponseHeaderTransform responseHeader:
+                        <ResponseHeaderTransformEditor Transform="responseHeader" />
+                        break;
+                    case ResponseHeaderRemoveTransform responseHeaderRemove:
+                        <ResponseHeaderRemoveTransformEditor Transform="responseHeaderRemove" />
+                        break;
+                    case ResponseHeadersAllowedTransform responseHeadersAllowed:
+                        <ResponseHeadersAllowedTransformEditor Transform="responseHeadersAllowed" />
+                        break;
+                    case ResponseTrailersCopyTransform responseTrailersCopy:
+                        <ResponseTrailersCopyTransformEditor Transform="responseTrailersCopy" />
+                        break;
+                    case ResponseTrailerTransform responseTrailer:
+                        <ResponseTrailerTransformEditor Transform="responseTrailer" />
+                        break;
+                    case ResponseTrailerRemoveTransform responseTrailerRemove:
+                        <ResponseTrailerRemoveTransformEditor Transform="responseTrailerRemove" />
+                        break;
+                    case ResponseTrailersAllowedTransform responseTrailersAllowed:
+                        <ResponseTrailersAllowedTransformEditor Transform="responseTrailersAllowed" />
+                        break;
+                    case CustomTransform customTransform:
+                        <CustomTransformEditor Transform="customTransform" />
+                        break;
+                    default:
+                        <MudText>Editing for transform type @Transform.GetType().Name is not yet implemented.</MudText>
+                        break;
+                }
+            </CustomInput>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="@ColorResolver.Buttons.Save" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private MudForm? _form;
+    private DeferredValidationHandler<RouteTransform>? _validationHandler;
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public required RouteModel Route { get; set; }
+
+    [Parameter, EditorRequired]
+    public required RouteTransform Transform { get; set; }
+
+    private async Task Save()
+    {
+        if (_validationHandler == null || _form == null)
+            return;
+
+        await _validationHandler.ExecuteValidationAsync(() => _form.ValidateAsync());
+
+        if (!_form.IsValid)
+            return;
+
+        MudDialog.Close(DialogResult.Ok(Transform));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        // Validate the entire transform object so inheritance validators run even when MudForm asks per-property.
+        _validationHandler = new(Validator, validateWholeObject: false);
+    }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        Validator.ContextData[ValidatorContext.Route.MODEL] = Route;
+
+        if (Transform is CustomTransform)
+            Validator.ContextData[ValidatorContext.CustomTransform.IS_EDITING] = true;
+    }
+}

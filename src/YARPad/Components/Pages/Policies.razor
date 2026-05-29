@@ -1,0 +1,159 @@
+@page "/policies/{policyTypeString}"
+
+@attribute [Authorize]
+@inherits StateComponentBase<CurrentConfigurationProfileState>
+
+@inject IYARPadConfigurationProvider ConfigurationProvider
+@inject IDialogService DialogService
+@inject IUnifiedPolicyProvider PolicyProvider
+
+<div style="max-width:900px;">
+    @if (Type == null)
+    {
+        <MudAlert Severity="Severity.Error">Invalid policy type specified.</MudAlert>
+    }
+    else
+    {
+        <MudStack Spacing="3">
+            <MudStack Row="true" AlignItems="AlignItems.Center">
+                <MudIcon Icon="@Type.Value.ToIcon()" Color="Color.Primary" Size="Size.Large" />
+                <MudStack Spacing="0">
+                    <MudText Typo="Typo.h4">@Type.HumanizeEnum() Policies</MudText>
+                    <MudText Typo="Typo.caption">Custom policies for @Type.HumanizeEnum()</MudText>
+                </MudStack>
+            </MudStack>
+
+            @if (State.SelectedProfile == null || CustomPolicies.Count == 0)
+            {
+                <MudPaper Class="pa-4" Outlined="true">
+                    <MudText Typo="Typo.body2">No @Type.HumanizeEnum() policies defined.</MudText>
+                </MudPaper>
+            }
+            else
+            {
+                @foreach (var policy in CustomPolicies)
+                {
+                    <PolicyCard Policy="policy"
+                                PolicyType="Type.Value"
+                                UsedBy="@GetUsedBy(policy.ID)"
+                                ConfigurationProfileID="State.SelectedProfile.ID"
+                                OnEdit="EditPolicyAsync"
+                                OnClone="ClonePolicyAsync"
+                                OnDelete="DeletePolicyAsync" />
+                }
+            }
+        </MudStack>
+    }
+</div>
+
+<MudFab Color="@ColorResolver.Buttons.AddSubtle" StartIcon="@IconResolver.Buttons.AddSubtle" Class="ma-4 fixed" Style="bottom: 0; right: 0;" OnClick="AddPolicyAsync" />
+
+@code {
+    [Parameter]
+    public string? PolicyTypeString { get; set; }
+
+    [Parameter, EditorRequired]
+    public PolicyType? Type { get; set; }
+
+    private List<PolicyInfo> CustomPolicies { get; set; } = new();
+
+    private async Task AddPolicyAsync()
+        => await OpenPolicyEditorAsync(new PolicyInfo() { ID = "", Name = "" }, Type);
+
+    private async Task EditPolicyAsync(PolicyInfo policy)
+        => await OpenPolicyEditorAsync(policy with { }, Type, policy.ID);
+
+    private async Task ClonePolicyAsync(PolicyInfo policy)
+    {
+        var clonedPolicy = policy with { ID = policy.ID + " Cloned" };
+        await OpenPolicyEditorAsync(clonedPolicy, Type);
+    }
+
+    private async Task DeletePolicyAsync(PolicyInfo policy)
+    {
+        if (State.SelectedProfile != null && Type != null && GetUsedBy(policy.ID).Count == 0)
+        {
+            await ConfigurationProvider.DeletePolicyAsync(State.SelectedProfile.ID, State.SelectedProfile.Configuration, policy, Type.Value);
+            await LoadPoliciesAsync();
+        }
+    }
+
+    private async Task OpenPolicyEditorAsync(PolicyInfo policy, PolicyType? policyType, string? policyID = null)
+    {
+        if (policyType == null)
+            return;
+
+        var options = new DialogOptions()
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+        };
+
+        var parameters = new DialogParameters<PolicyDialog>()
+        {
+            { x => x.PolicyID, policyID },
+            { x => x.PolicyType, policyType.Value },
+            { x => x.Policy, policy },
+        };
+
+        var dialog = await DialogService.ShowAsync<PolicyDialog>(null, parameters, options);
+        var result = await dialog.Result;
+
+        if (result == null || result.Canceled || result.Data is not PolicyInfo savedPolicy)
+            return;
+
+        if (State.SelectedProfile == null)
+            return;
+
+        await ConfigurationProvider.SavePolicyAsync(State.SelectedProfile.ID, State.SelectedProfile.Configuration, policyID, savedPolicy, policyType.Value);
+        await LoadPoliciesAsync();
+    }
+
+    private List<string> GetUsedBy(string policyID)
+    {
+        if (State.SelectedProfile == null || Type == null)
+            return [];
+
+        var routes = State.SelectedProfile.Configuration.Routes;
+        var clusters = State.SelectedProfile.Configuration.Clusters;
+
+        return Type.Value switch
+        {
+            PolicyType.Authorization => routes.Where(x => x.AuthorizationPolicy == policyID).Select(x => x.RouteID).ToList(),
+            PolicyType.Timeout => routes.Where(x => x.TimeoutPolicy == policyID).Select(x => x.RouteID).ToList(),
+            PolicyType.RateLimiter => routes.Where(x => x.RateLimiterPolicy == policyID).Select(x => x.RouteID).ToList(),
+            PolicyType.Cors => routes.Where(x => x.CorsPolicy == policyID).Select(x => x.RouteID).ToList(),
+            PolicyType.OutputCache => routes.Where(x => x.OutputCachePolicy == policyID).Select(x => x.RouteID).ToList(),
+            PolicyType.LoadBalancing => clusters.Where(x => x.LoadBalancingPolicy == policyID).Select(x => x.ClusterID).ToList(),
+            PolicyType.SessionAffinity => clusters.Where(x => x.SessionAffinity.Policy == policyID).Select(x => x.ClusterID).ToList(),
+            PolicyType.SessionAffinityFailure => clusters.Where(x => x.SessionAffinity.FailurePolicy == policyID).Select(x => x.ClusterID).ToList(),
+            PolicyType.ActiveHealthCheck => clusters.Where(x => x.HealthCheck.Active.Policy == policyID).Select(x => x.ClusterID).ToList(),
+            PolicyType.PassiveHealthCheck => clusters.Where(x => x.HealthCheck.Passive.Policy == policyID).Select(x => x.ClusterID).ToList(),
+            PolicyType.AvailableDestination => clusters.Where(x => x.HealthCheck.AvailableDestinationsPolicy == policyID).Select(x => x.ClusterID).ToList(),
+            _ => throw new ArgumentOutOfRangeException(nameof(Type), $"Unknown policy type: {Type}")
+        };
+    }
+
+    private async Task LoadPoliciesAsync()
+    {
+        if (Type != null)
+            CustomPolicies = await PolicyProvider.GetPoliciesAsync(Type.Value, default);
+    }
+
+    protected override async Task OnParametersSetAsync()
+    {
+        await base.OnParametersSetAsync();
+
+        if (!Enum.TryParse<PolicyType>(PolicyTypeString, ignoreCase: true, out var result))
+            return;
+
+        Type = result;
+        await LoadPoliciesAsync();
+    }
+
+    protected override async void RefreshState(CurrentConfigurationProfileState state)
+    {
+        await LoadPoliciesAsync();
+        base.RefreshState(state);
+    }
+}

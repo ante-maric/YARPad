@@ -1,0 +1,217 @@
+@if (!IsEnabled)
+{
+    <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-4">
+        This configuration section is disabled. Enable it to allow edits.
+    </MudAlert>
+}
+
+<MudGrid Spacing="4">
+
+    <MudItem xs="@(ShowCookies ? 6 : 12)">
+
+        <MudCard Outlined="true">
+            <MudCardHeader>
+                <MudText Typo="Typo.subtitle1">Policies</MudText>
+            </MudCardHeader>
+            <MudCardContent Class="pt-0">
+                <MudStack Spacing="2">
+
+                    <TopToolTip Text="@Tooltips.SessionAffinity_Policy">
+                        <MudSelect Label="ⓘ Policy"
+                                   @bind-Value="SessionAffinity.Policy"
+                                   For="@(() => SessionAffinity.Policy)"
+                                   Variant="Variant.Outlined"
+                                   Dense="true"
+                                   Margin="Margin.Dense"
+                                   Clearable="true"
+                                   HelperText="@Policies.GetPolicyDescription(SessionAffinity.Policy)"
+                                   Disabled="@(!IsEnabled)">
+                            @foreach (var policy in Policies)
+                            {
+                                <MudSelectItem Value="@policy.ID">
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                                        <MudIcon Icon="@IconResolver.GetSessionAffinityPolicyIcon(policy.ID)"
+                                                 Class="@ColorResolver.GetSessionAffinityPolicyColorClass(policy.ID)"
+                                                 Size="Size.Small" />
+                                        @policy.Name
+                                    </MudStack>
+                                </MudSelectItem>
+                            }
+                        </MudSelect>
+                    </TopToolTip>
+                    <TopToolTip Text="@Tooltips.SessionAffinity_AffinityKeyName">
+                        <MudTextField Label="@AffinityKeyLabel"
+                                      @bind-Value="SessionAffinity.AffinityKeyName"
+                                      For="@(() => Cluster.SessionAffinity.AffinityKeyName)"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Disabled="@(!IsEnabled)" />
+                    </TopToolTip>
+                    <TopToolTip Text="@Tooltips.SessionAffinity_FailurePolicy">
+                        <MudSelect Label="ⓘ Failure Policy"
+                                   @bind-Value="SessionAffinity.FailurePolicy"
+                                   For="@(() => Cluster.SessionAffinity.FailurePolicy)"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   Dense="true"
+                                   Margin="Margin.Dense"
+                                   HelperText="@FailurePolicies.GetPolicyDescription(SessionAffinity.FailurePolicy)"
+                                   Disabled="@(!IsEnabled)">
+                            @foreach (var policy in FailurePolicies)
+                            {
+                                <MudSelectItem Value="@policy.ID">
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                                        <MudIcon Icon="@IconResolver.GetSessionAffinityFailurePolicyIcon(policy.ID)"
+                                                 Class="@ColorResolver.GetSessionAffinityFailurePolicyColorClass(policy.ID)"
+                                                 Size="Size.Small" />
+                                        @policy.Name
+                                    </MudStack>
+                                </MudSelectItem>
+                            }
+                        </MudSelect>
+                    </TopToolTip>
+
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+
+    </MudItem>
+
+    @if (ShowCookies)
+    {
+        <MudItem xs="6">
+
+            <MudCard Outlined="true">
+                <MudCardHeader>
+                    <MudText Typo="Typo.subtitle1">Cookie</MudText>
+                </MudCardHeader>
+                <MudCardContent Class="pt-0">
+                    <MudStack Spacing="2">
+
+                        <TopToolTip Text="@Tooltips.SessionAffinity_Cookie_Domain">
+                            <MudTextField Label="ⓘ Domain"
+                                          @bind-Value="SessionAffinity.Cookie.Domain"
+                                          For="@(() => Cluster.SessionAffinity.Cookie.Domain)"
+                                          Variant="Variant.Outlined"
+                                          Margin="Margin.Dense"
+                                          Disabled="@(!IsEnabled)" />
+                        </TopToolTip>
+                        <TopToolTip Text="@Tooltips.SessionAffinity_Cookie_Path">
+                            <MudTextField Label="ⓘ Path"
+                                          @bind-Value="SessionAffinity.Cookie.Path"
+                                          For="@(() => Cluster.SessionAffinity.Cookie.Path)"
+                                          Variant="Variant.Outlined"
+                                          Margin="Margin.Dense"
+                                          Disabled="@(!IsEnabled)" />
+                        </TopToolTip>
+                        <TopToolTip Text="@Tooltips.SessionAffinity_Cookie_Expiration">
+                            <MudTextField T="TimeSpan ?"
+                                          Label="ⓘ Expiration"
+                                          @bind-Value="SessionAffinity.Cookie.Expiration"
+                                          For="@(() => Cluster.SessionAffinity.Cookie.Expiration)"
+                                          Converter="@FieldConverters.TimeSpan"
+                                          Variant="Variant.Outlined"
+                                          Margin="Margin.Dense"
+                                          Disabled="@(!IsEnabled)" />
+                        </TopToolTip>
+                        <TopToolTip Text="@Tooltips.SessionAffinity_Cookie_MaxAge">
+                            <MudTextField T="TimeSpan ?"
+                                          Label="ⓘ Max Age"
+                                          @bind-Value="SessionAffinity.Cookie.MaxAge"
+                                          For="@(() => Cluster.SessionAffinity.Cookie.MaxAge)"
+                                          Converter="@FieldConverters.TimeSpan"
+                                          Variant="Variant.Outlined"
+                                          Margin="Margin.Dense"
+                                          Disabled="@(!IsEnabled)" />
+                        </TopToolTip>
+                        <TopToolTip Text="@Tooltips.SessionAffinity_Cookie_SecurePolicy">
+                            <MudSelect T="CookieSecurePolicy ?"
+                                       Label="ⓘ Secure Policy"
+                                       @bind-Value="SessionAffinity.Cookie.SecurePolicy"
+                                       For="@(() => Cluster.SessionAffinity.Cookie.SecurePolicy)"
+                                       Variant="Variant.Outlined"
+                                       Clearable="true"
+                                       Margin="Margin.Dense"
+                                       Dense="true"
+                                       HelperText="@Cluster.SessionAffinity.Cookie.SecurePolicy?.ToHelpText()"
+                                       Disabled="@(!IsEnabled)">
+                                @foreach (var policy in Enum.GetValues<CookieSecurePolicy>().Select(x => (CookieSecurePolicy?)x))
+                                {
+                                    <MudSelectItem Value="@policy">
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                                            <MudIcon Icon="@policy!.Value.ToIcon()" Class="@policy.Value.ToColorClass()" Size="Size.Small" />
+                                            @policy?.HumanizeEnum()
+                                        </MudStack>
+                                    </MudSelectItem>
+                                }
+                            </MudSelect>
+                        </TopToolTip>
+                        <TopToolTip Text="@Tooltips.SessionAffinity_Cookie_SameSite">
+                            <MudSelect T="SameSiteMode ?"
+                                       Label="ⓘ Same Site"
+                                       @bind-Value="SessionAffinity.Cookie.SameSite"
+                                       For="@(() => Cluster.SessionAffinity.Cookie.SameSite)"
+                                       Variant="Variant.Outlined"
+                                       Clearable="true"
+                                       Margin="Margin.Dense"
+                                       Dense="true"
+                                       HelperText="@Cluster.SessionAffinity.Cookie.SameSite?.ToHelpText()"
+                                       Disabled="@(!IsEnabled)">
+                                @foreach (var mode in Enum.GetValues<SameSiteMode>().Select(x => (SameSiteMode?)x))
+                                {
+                                    <MudSelectItem Value="@mode">
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                                            <MudIcon Icon="@mode!.Value.ToIcon()" Class="@mode.Value.ToColorClass()" Size="Size.Small" />
+                                            @mode?.HumanizeEnum()
+                                        </MudStack>
+                                    </MudSelectItem>
+                                }
+                            </MudSelect>
+                        </TopToolTip>
+                        <MudStack Row="true">
+                            <TopToolTip Text="@Tooltips.SessionAffinity_Cookie_HttpOnly">
+                                <MudCheckBox Label="ⓘ Http Only"
+                                             @bind-Value="SessionAffinity.Cookie.HttpOnly"
+                                             For="@(() => Cluster.SessionAffinity.Cookie.HttpOnly)"
+                                             Dense="true"
+                                             TriState="true"
+                                             Disabled="@(!IsEnabled)" />
+                            </TopToolTip>
+                            <TopToolTip Text="@Tooltips.SessionAffinity_Cookie_IsEssential">
+                                <MudCheckBox Label="ⓘ Is Essential"
+                                             @bind-Value="SessionAffinity.Cookie.IsEssential"
+                                             For="@(() => Cluster.SessionAffinity.Cookie.IsEssential)"
+                                             Dense="true"
+                                             TriState="true"
+                                             Disabled="@(!IsEnabled)" />
+                            </TopToolTip>
+                        </MudStack>
+
+                    </MudStack>
+                </MudCardContent>
+            </MudCard>
+        </MudItem>
+    }
+
+</MudGrid>
+
+@code {
+    [CascadingParameter]
+    private ClusterModel Cluster { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public required SessionAffinityModel SessionAffinity { get; set; }
+
+    [Parameter, EditorRequired]
+    public required List<PolicyInfo> Policies { get; set; }
+
+    [Parameter, EditorRequired]
+    public required List<PolicyInfo> FailurePolicies { get; set; }
+
+    [Parameter, EditorRequired]
+    public bool IsEnabled { get; set; }
+
+    private bool ShowCookies => SessionAffinity.Policy != null && SessionAffinity.Policy != SessionAffinityConstants.Policies.CustomHeader;
+
+    private string AffinityKeyLabel => SessionAffinity.Policy != SessionAffinityConstants.Policies.CustomHeader ? "ⓘ Cookie Name" : "ⓘ Header Name";
+}

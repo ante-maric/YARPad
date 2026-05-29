@@ -1,0 +1,331 @@
+﻿@using System.Security.Authentication
+@using AutoMapper
+@using Yarp.ReverseProxy.Configuration
+
+@inject IUnifiedPolicyProvider PolicyProvider
+@inject ClusterValidator Validator
+@inject IYARPadConfigurationProvider ConfigurationProvider
+@inject IConfigValidator ConfigValidator
+@inject IMapper Mapper
+@inject IDialogService DialogService
+
+<MudDialog Style="height: calc(100% - 64px);" Class="sticky-header-dialog border mud-border-primary-darken">
+
+    <TitleContent>
+        <MudText Typo="Typo.h6">Cluster Editor</MudText>
+    </TitleContent>
+
+    <DialogContent>
+
+        <div class="flex-none">
+            <MudForm @ref="_mainForm"
+                     Model="@Cluster"
+                     Validation="@_validationHandler.ValidateAsync">
+                <MudStack Spacing="2" Class="mb-2">
+                    <MudStack Row="true" Spacing="2" StretchItems="StretchItems.All">
+                        <MudTextField Label="Identifier"
+                                      @bind-Value="Cluster.ClusterID"
+                                      For="@(() => Cluster.ClusterID)"
+                                      Variant="Variant.Outlined"
+                                      Class="flex-basis-0" />
+
+                        <TopToolTip Text="@Tooltips.Cluster_LoadBalancingPolicy" RootClass="flex-basis-0">
+                            <MudSelect Label="ⓘ Load Balancing Policy"
+                                       @bind-Value="Cluster.LoadBalancingPolicy"
+                                       For="(() => Cluster.LoadBalancingPolicy)"
+                                       Variant="Variant.Outlined"
+                                       HelperText="@_policies.GetPolicyDescription(PolicyType.LoadBalancing, Cluster.LoadBalancingPolicy)">
+                                @foreach (var policy in _policies.GetValueOrDefault(PolicyType.LoadBalancing, []))
+                                {
+                                    <MudSelectItem Value="@policy.ID">
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                                            <MudIcon Icon="@IconResolver.GetLoadBalancingPolicyIcon(policy.ID)" Class="@ColorResolver.GetLoadBalancingPolicyColorClass(policy.ID)" />
+                                            @policy.Name
+                                        </MudStack>
+                                    </MudSelectItem>
+                                }
+                            </MudSelect>
+                        </TopToolTip>
+                    </MudStack>
+
+                    <TopToolTip Text="@Tooltips.Cluster_EnableConfigurationSections">
+                        <MudField Label="ⓘ Enable Configuration Sections"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense">
+                            <MudStack Row="true" Spacing="4" Class="d-flex flex-grow-1 flex-wrap justify-center ma-2">
+                                @foreach (var configSection in Cluster.OptionalSectionSwitches)
+                                {
+                                    <MudSwitch T="bool"
+                                               Label="@configSection.Section.HumanizeEnum()"
+                                               @bind-Value="@configSection.IsEnabled"
+                                               Size="Size.Small"
+                                               ThumbIcon="@IconResolver.GetSwitchThumbIcon(configSection.IsEnabled)"
+                                               ThumbIconColor="@ColorResolver.GetSwitchThumbIconColor(configSection.IsEnabled)" />
+                                }
+                            </MudStack>
+                        </MudField>
+                    </TopToolTip>
+                </MudStack>
+            </MudForm>
+        </div>
+
+        <div class="d-flex flex-auto flex-column" style="min-height:0;">
+            <CascadingValue Value="@Cluster">
+                <MudTabs Outlined="true"
+                         Elevation="1"
+                         ApplyEffectsToContainer="true"
+                         KeepPanelsAlive="true"
+                         PanelClass="pa-2">
+                    <ChildContent>
+                        <MudTabPanel Text="ⓘ Destinations">
+                            <TabWrapperContent>
+                                <TopToolTip Text="@Tooltips.Cluster_Destinations">
+                                    @context
+                                </TopToolTip>
+                            </TabWrapperContent>
+                            <ChildContent>
+                                <MudForm @ref="_destinationsForm"
+                                         Model="@Cluster"
+                                         Validation="@_validationHandler.ValidateAsync"
+                                         Class="pa-2">
+                                    <DestinationsEditor Destinations="@Cluster.Destinations" />
+                                </MudForm>
+                            </ChildContent>
+                        </MudTabPanel>
+
+                        <MudTabPanel Text="ⓘ Session Affinity"
+                                     BadgeDot="@(_sessionAffinityForm?.IsValid == false)"
+                                     BadgeColor="@ColorResolver.Symbol.BadgeError">
+                            <TabWrapperContent>
+                                <TopToolTip Text="@Tooltips.Cluster_SessionAffinity">
+                                    @context
+                                </TopToolTip>
+                            </TabWrapperContent>
+                            <ChildContent>
+                                <div class="overflow-auto pa-2">
+                                    <MudForm @ref="_sessionAffinityForm"
+                                             Model="@Cluster"
+                                             Validation="@_validationHandler.ValidateAsync">
+                                        <SessionAffinityEditor SessionAffinity="@Cluster.SessionAffinity"
+                                                               Policies="@_policies.GetValueOrDefault(PolicyType.SessionAffinity, [])"
+                                                               FailurePolicies="@_policies.GetValueOrDefault(PolicyType.SessionAffinityFailure, [])"
+                                                               IsEnabled="@IsSectionEnabled(ClusterConfigSection.SessionAffinity)" />
+                                    </MudForm>
+                                </div>
+                            </ChildContent>
+                        </MudTabPanel>
+
+                        <MudTabPanel Text="ⓘ Health Check"
+                                     BadgeDot="@(_healthCheckForm?.IsValid == false)"
+                                     BadgeColor="@ColorResolver.Symbol.BadgeError">
+                            <TabWrapperContent>
+                                <TopToolTip Text="@Tooltips.Cluster_HealthCheck">
+                                    @context
+                                </TopToolTip>
+                            </TabWrapperContent>
+                            <ChildContent>
+                                <div class="overflow-auto pa-2">
+                                    <MudForm @ref="_healthCheckForm"
+                                             Model="@Cluster"
+                                             Validation="@_validationHandler.ValidateAsync">
+                                        <HealthCheckEditor HealthCheck="@Cluster.HealthCheck"
+                                                           ActivePolicies="@_policies.GetValueOrDefault(PolicyType.ActiveHealthCheck, [])"
+                                                           PassivePolicies="@_policies.GetValueOrDefault(PolicyType.PassiveHealthCheck, [])"
+                                                           AvailableDestinationsPolicies="@_policies.GetValueOrDefault(PolicyType.AvailableDestination, [])"
+                                                           IsEnabled="@IsSectionEnabled(ClusterConfigSection.HealthCheck)" />
+                                    </MudForm>
+                                </div>
+                            </ChildContent>
+                        </MudTabPanel>
+
+                        <MudTabPanel Text="ⓘ HTTP Client"
+                                     BadgeDot="@(_httpClientForm?.IsValid == false)"
+                                     BadgeColor="@ColorResolver.Symbol.BadgeError">
+                            <TabWrapperContent>
+                                <TopToolTip Text="@Tooltips.Cluster_HttpClient">
+                                    @context
+                                </TopToolTip>
+                            </TabWrapperContent>
+                            <ChildContent>
+                                <div class="overflow-auto pa-2">
+                                    <MudForm @ref="_httpClientForm"
+                                             Model="@Cluster"
+                                             Validation="@_validationHandler.ValidateAsync">
+                                        <HttpClientEditor HttpClient="@Cluster.HttpClient"
+                                                          IsEnabled="@IsSectionEnabled(ClusterConfigSection.HttpClient)" />
+                                    </MudForm>
+                                </div>
+                            </ChildContent>
+                        </MudTabPanel>
+
+                        <MudTabPanel Text="ⓘ HTTP Request"
+                                     BadgeDot="@(_httpRequestForm?.IsValid == false)"
+                                     BadgeColor="@ColorResolver.Symbol.BadgeError">
+                            <TabWrapperContent>
+                                <TopToolTip Text="@Tooltips.Cluster_HttpRequest">
+                                    @context
+                                </TopToolTip>
+                            </TabWrapperContent>
+                            <ChildContent>
+                                <div class="overflow-auto pa-2">
+                                    <MudForm @ref="_httpRequestForm"
+                                             Model="@Cluster"
+                                             Validation="@_validationHandler.ValidateAsync">
+                                        <HttpRequestEditor HttpRequest="@Cluster.HttpRequest"
+                                                           IsEnabled="@IsSectionEnabled(ClusterConfigSection.HttpRequest)" />
+                                    </MudForm>
+                                </div>
+                            </ChildContent>
+                        </MudTabPanel>
+
+                        <MudTabPanel Text="ⓘ Metadata"
+                                     BadgeDot="@(_metadataForm?.IsValid == false)"
+                                     BadgeColor="@ColorResolver.Symbol.BadgeError">
+                            <TabWrapperContent>
+                                <TopToolTip Text="@Tooltips.Cluster_Metadata">
+                                    @context
+                                </TopToolTip>
+                            </TabWrapperContent>
+                            <ChildContent>
+                                <div class="overflow-auto pa-2">
+                                    <MudForm @ref="_metadataForm"
+                                             Model="@Cluster"
+                                             Validation="@_validationHandler.ValidateAsync">
+                                        <MetadataEditor TParent="ClusterModel" 
+                                                        Metadata="@Cluster.Metadata" 
+                                                        ForMetadata="@(() => Cluster.Metadata)"
+                                                        SuggestedKeys="@SuggestedMetadataKeys"
+                                                        IsEnabled="@IsSectionEnabled(ClusterConfigSection.Metadata)" />
+                                    </MudForm>
+                                </div>
+                            </ChildContent>
+                        </MudTabPanel>
+                    </ChildContent>
+                </MudTabs>
+            </CascadingValue>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="@ColorResolver.Buttons.Save" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private MudForm? _mainForm;
+    private MudForm? _destinationsForm;
+    private MudForm? _sessionAffinityForm;
+    private MudForm? _httpClientForm;
+    private MudForm? _httpRequestForm;
+    private MudForm? _healthCheckForm;
+    private MudForm? _metadataForm;
+
+    private DeferredValidationHandler<ClusterModel>? _validationHandler;
+    private bool _validatedOnOpen;
+
+    private Dictionary<PolicyType, List<PolicyInfo>> _policies = [];
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public string? ClusterID { get; set; }
+
+    [Parameter, EditorRequired]
+    public required ClusterModel Cluster { get; set; }
+
+    [Parameter]
+    public bool ValidateWhenOpened { get; set; }
+
+    private List<MudForm> Forms => new MudForm?[]
+    {
+        _mainForm,
+        _destinationsForm,
+        _sessionAffinityForm,
+        _httpClientForm,
+        _healthCheckForm,
+        _httpRequestForm,
+        _metadataForm
+    }
+    .Where(x => x != null)
+    .Select(x => x!)
+    .ToList();
+
+    private List<string> SuggestedMetadataKeys
+    {
+        get
+        {
+            var suggestedKeys = new List<string>();
+
+            if (Cluster.HealthCheck.Active.Policy == HealthCheckConstants.ActivePolicy.ConsecutiveFailures)
+                suggestedKeys.Add(HealthCheckMetadataKeys.ActiveHealthCheck.ConsecutiveFailuresThreshold);
+
+            if (Cluster.HealthCheck.Passive.Policy == HealthCheckConstants.PassivePolicy.TransportFailureRate)
+                suggestedKeys.Add(HealthCheckMetadataKeys.PassiveHealthCheck.TransportFailureRateLimit);
+
+            return suggestedKeys;
+        }
+    }
+
+    private bool IsSectionEnabled(ClusterConfigSection section) =>
+        Cluster.SectionSwitches[section].IsEnabled;
+
+    private async Task Save()
+    {
+        if (_validationHandler == null)
+            return;
+
+        await _validationHandler.ExecuteValidationAsync(() => Task.WhenAll(Forms.Select(x => x.ValidateAsync())));
+
+        if (!Forms.TrueForAll(x => x.IsValid))
+            return;
+
+        var exceptions = await ConfigValidator.ValidateClusterAsync(Mapper.Map<ClusterConfig>(Cluster));
+        if (exceptions.Count > 0)
+        {
+            var options = new DialogOptions()
+            {
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+            };
+
+            var parameters = new DialogParameters<ValidationErrorsDialog>()
+            {
+                { x => x.Errors, Enumerable.Repeat(exceptions.Select(x => x.Message).First(), 20).ToList() },
+            };
+
+            await DialogService.ShowAsync<ValidationErrorsDialog>(null, parameters, options);
+        }
+        else
+            MudDialog.Close(DialogResult.Ok(Cluster));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        Validator.ContextData[ValidatorContext.Cluster.ORIGINAL_ID] = ClusterID;
+        _validationHandler = new(Validator);
+
+        foreach (var policyType in PolicyContext.Cluster.GetPolicyTypes())
+        {
+            var policies = await PolicyProvider.GetPoliciesAsync(policyType, default);
+            _policies[policyType] = policies;
+        }
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && ValidateWhenOpened && _validationHandler != null && !_validatedOnOpen)
+        {
+            _validatedOnOpen = true;
+
+            // Let child components finish their first render/field registration.
+            await Task.Yield();
+
+            await _validationHandler.ExecuteValidationAsync(() => Task.WhenAll(Forms.Select(x => x.ValidateAsync())));
+        }
+    }
+}

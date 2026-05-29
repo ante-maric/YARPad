@@ -1,0 +1,37 @@
+<MudDialog Style="height: 400px" Class="border mud-border-primary-darken">
+
+    <TitleContent>
+        <MudText Typo="Typo.h6">Related Entities</MudText>
+        <MudText Typo="Typo.caption">This item is used by the following entities:</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudStack>
+            @foreach (var link in Links)
+            {
+                <MudLink OnClick="@(() => OpenRelatedEntityEditorAsync(link))">@link</MudLink>
+            }
+        </MudStack>
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="@ColorResolver.Buttons.Save" OnClick="Ok">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public required List<string> Links { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<string> OnLinkClick { get; set; }
+
+    private void Ok() => MudDialog.Close(DialogResult.Ok(true));
+
+    private async Task OpenRelatedEntityEditorAsync(string entityID)
+    {
+        await OnLinkClick.InvokeAsync(entityID);
+    }
+}

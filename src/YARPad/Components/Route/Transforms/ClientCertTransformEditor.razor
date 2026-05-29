@@ -1,0 +1,12 @@
+﻿<TopToolTip Text="@Tooltips.Transforms_ClientCert_Field">
+    <MudTextField Label="ⓘ Header name"
+                  @bind-Value="Transform.ClientCert"
+                  For="@(() => Transform.ClientCert)"
+                  Variant="Variant.Outlined"
+                  Margin="Margin.Dense" />
+</TopToolTip>
+
+@code {
+    [Parameter, EditorRequired]
+    public required ClientCertTransform Transform { get; set; }
+}

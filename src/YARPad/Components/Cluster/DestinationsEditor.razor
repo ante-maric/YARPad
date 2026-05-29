@@ -1,0 +1,110 @@
+﻿@using AutoMapper
+
+@inject IDialogService DialogService
+@inject IMapper Mapper
+
+<MudStack Spacing="2">
+    <CustomInput T="List<DestinationModel>" For="@(() => Cluster.Destinations)">
+        <MudSimpleTable Class="overflow-x-auto" Bordered="true" Outlined="true">
+            <thead>
+                <tr>
+                    <th style="width:1%; white-space:nowrap; text-align:center;"/>
+                    <th>Identifier</th>
+                    <th>Address</th>
+                    <th>Host Header</th>
+                    <th>Health URL</th>
+                    <th style="width:1%; white-space:nowrap; text-align:center;">
+                        <MudIconButton Icon="@IconResolver.Buttons.Add" Color="@ColorResolver.Buttons.Add" Size="Size.Small" OnClick="AddDestinationAsync" />
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var destination in Destinations)
+                {
+                    <tr>
+                        <td>
+                            <MudStack Row="true" Justify="Justify.Center">
+                                <MudToggleIconButton @bind-Toggled="destination.IsEnabled"
+                                                     Color="@ColorResolver.Symbol.ToggleOff"
+                                                     ToggledColor="@ColorResolver.Symbol.ToggleOn"
+                                                     Icon="@IconResolver.Symbol.ToggleOff"
+                                                     ToggledIcon="@IconResolver.Symbol.ToggleOn"
+                                                     Size="Size.Medium" />
+                            </MudStack>
+                        </td>
+                        <td>
+                            <MudText>@destination.ID</MudText>
+                        </td>
+                        <td>
+                            <MudText>@destination.Address</MudText>
+                        </td>
+                        <td>
+                            <MudText>@destination.Host</MudText>
+                        </td>
+                        <td>
+                            <MudText>@destination.Health</MudText>
+                        </td>
+                        <td>
+                            <MudStack Row="true" Spacing="2" Justify="Justify.Center">
+                                <MudIconButton Icon="@IconResolver.Buttons.Edit" Color="@ColorResolver.Buttons.Edit" Size="Size.Small" OnClick="@(() => EditDestinationAsync(destination.ID, destination))" />
+                                <MudIconButton Icon="@IconResolver.Buttons.Delete" Color="@ColorResolver.Buttons.Delete" Size="Size.Small" OnClick="@(() => RemoveDestination(destination))" />
+                            </MudStack>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    </CustomInput>
+    @if (Destinations.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info" Dense="true">No destinations defined.</MudAlert>
+    }
+</MudStack>
+
+@code {
+    [CascadingParameter]
+    private ClusterModel Cluster { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public required List<DestinationModel> Destinations { get; set; }
+
+    private async Task AddDestinationAsync()
+    {
+        var newDestinationId = $"destination{Destinations.Count + 1}";
+        await EditDestinationAsync(null, new DestinationModel { ID = newDestinationId, Address = "https://" });
+    }
+
+    private void RemoveDestination(DestinationModel destination)
+    {
+        Destinations.Remove(destination);
+    }
+
+    private async Task EditDestinationAsync(string? destinationID, DestinationModel destination)
+    {
+        var options = new DialogOptions()
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true
+        };
+
+        var parameters = new DialogParameters<DestinationDialog>()
+        {
+            { x => x.DestinationID, destinationID },
+            { x => x.Destination, destination with { Metadata = new(destination.Metadata) } },
+            { x => x.Cluster, Cluster },
+        };
+
+        var dialog = await DialogService.ShowAsync<DestinationDialog>(null, parameters, options);
+        var result = await dialog.Result;
+        if (result?.Canceled == true || result?.Data is not DestinationModel editedDestination)
+            return;
+
+        if (destinationID == null)
+            Destinations.Add(editedDestination);
+        else
+        {
+            var oldDestination = Destinations.Find(x => x.ID == destinationID) ?? new DestinationModel() { ID = editedDestination.ID, Address = editedDestination.Address };
+            Mapper.Map(editedDestination, oldDestination);
+        }
+    }
+}

@@ -1,0 +1,475 @@
+﻿@using System.IO
+@using System.Linq
+@using System.Text.Json
+
+@inherits StateLayoutComponentBase<MainState>
+
+@inject NavigationManager NavigationManager
+@inject IYARPadConfigurationProvider ConfigurationProvider
+@inject IDialogService DialogService
+@inject ISnackbar Snackbar
+@inject IJSRuntime JSRuntime
+@inject IStateStore<ThemeState> ThemeStateStore
+@inject IStateStore<ConfigurationProfileState> ConfigurationProfileStateStore
+@inject IStateStore<CurrentConfigurationProfileState> CurrentConfigurationProfileStateStore
+
+<MudThemeProvider IsDarkMode="State.Theme.IsDarkMode" Theme="_theme" />
+<MudPopoverProvider />
+<MudDialogProvider CloseButton="true" />
+<MudSnackbarProvider />
+
+<MudLayout>
+    <MudAppBar Dense="true" Elevation="1">
+        <MudIconButton Icon="@IconResolver.Buttons.Menu" Edge="Edge.Start" OnClick="@((e) => DrawerToggle())" />
+        <MudSpacer />
+        <AuthorizeView>
+            <ConfigurationStatusIndicator Status="@State.YarpConfigStatus" />
+        </AuthorizeView>
+        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="0" Class="ml-4">
+            <MudText Typo="Typo.caption">Light</MudText>
+            <MudSwitch T="bool"
+                       Size="Size.Medium"
+                       Value="State.Theme.IsDarkMode"
+                       ThumbIcon="@IconResolver.GetThemeIcon(State.Theme.IsDarkMode)"
+                       ThumbIconColor="@ColorResolver.Symbol.Theme"
+                       ValueChanged="@(x => ThemeStateStore.Update(s => s with { IsDarkMode = x }))" />
+            <MudText Typo="Typo.caption">Dark</MudText>
+        </MudStack>
+    </MudAppBar>
+    <MudDrawer @bind-Open="_drawerOpen" Variant="DrawerVariant.Mini" ClipMode="DrawerClipMode.Never" Elevation="2" Width="300px" Class="d-flex flex-column">
+        <MudDrawerHeader Class="pl-2">
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="0">
+                <MudImage Src="@Assets["_content/CodingCell.YARPad/YarpadIcon.png"]" Width="40" />
+                @if(_drawerOpen)
+                {
+                    <MudStack Row="true" AlignItems="AlignItems.Baseline" Spacing="0" Class="ml-4">
+                        <MudText Typo="Typo.h5" Class="mud-primary-text logo-yar-font">YAR</MudText>
+                        <MudText Typo="Typo.h5" Class="mud-primary-text logo-p-font">P</MudText>
+                        <MudText Typo="Typo.h5" Class="mud-secondary-text logo-ad-font">ad</MudText>
+                        <MudText Typo="Typo.caption" Class="ml-1">@AppVersion</MudText>
+                    </MudStack>
+                }
+            </MudStack>
+        </MudDrawerHeader>
+        @if (_drawerOpen)
+        {
+            <AuthorizeView>
+                <Authorized>
+                    <MudStack Row="true" Spacing="0" AlignItems="AlignItems.Center" Class="mb-2">
+                        <TopToolTip Text="@SelectedProfile?.Description">
+                            <MudSelect T="ConfigurationProfile"
+                                       Label="Configuration Profiles"
+                                       @bind-Value="SelectedProfile"
+                                       Variant="Variant.Outlined"
+                                       OuterClass="flex-grow-0 pl-4"
+                                       Margin="Margin.Dense"
+                                       Dense="true"
+                                       FullWidth="true"
+                                       @key="SelectedProfile?.GetHashCode()">
+                                @foreach (var config in State.ConfigurationProfile.Profiles)
+                                {
+                                    <MudSelectItem T="ConfigurationProfile" Value="config">
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                                            <MudIcon Icon="@IconResolver.GetConfigActivationIcon(config.IsActive)" Color="@ColorResolver.GetConfigActivationColor(config.IsActive)" />
+                                            @config.Name
+                                        </MudStack>
+                                    </MudSelectItem>
+                                }
+                            </MudSelect>
+                        </TopToolTip>
+                        <MudMenu Icon="@IconResolver.Buttons.More" Dense="true">
+                            <MudMenuItem Icon="@IconResolver.Symbol.ActiveConfig" Label="Activate" Disabled="@(State.CurrentConfigurationProfile.SelectedProfile?.IsActive == true)" OnClick="OnActivateConfigurationProfileAsync" />
+                            <MudDivider />
+                            <MudMenuItem Icon="@IconResolver.Buttons.Edit" Label="Edit" OnClick="OnEditConfigurationProfileAsync" />
+                            <MudMenuItem Icon="@IconResolver.Buttons.Add" Label="Add" OnClick="OnAddConfigurationProfileAsync" />
+                            <MudMenuItem Icon="@IconResolver.Buttons.Clone" Label="Clone" OnClick="OnCloneConfigurationProfileAsync" />
+                            <MudMenuItem Icon="@IconResolver.Buttons.Delete" Label="Delete" Disabled="@(State.CurrentConfigurationProfile.SelectedProfile?.IsActive == true)" OnClick="OnDeleteConfigurationProfileAsync" />
+                            <MudDivider />
+                            <MudMenuItem Icon="@IconResolver.Buttons.Export" Label="Export..." Disabled="@(State.CurrentConfigurationProfile.SelectedProfile == null)" OnClick="OnExportConfigurationProfileAsync" />
+                            <MudMenuItem Icon="@IconResolver.Buttons.Import" Label="Import..." OnClick="OnImportConfigurationProfileAsync" />
+                            <MudDivider />
+                            <MudMenuItem Icon="@IconResolver.Buttons.Json" Label="View Config JSON" OnClick="OnViewYarpConfigAsync" />
+                        </MudMenu>
+                    </MudStack>
+                </Authorized>
+            </AuthorizeView>
+        }
+        <MudDivider Class="flex-grow-0" />
+        <NavMenu />
+        <div class="mt-auto">
+            <AuthorizeView>
+                <Authorized>
+                    <MudDivider />
+                    <MudMenu Class="mud-width-full mt-1 mb-2 pl-4 pt-2" Dense="true" PopoverClass="" FullWidth="true">
+                        <ActivatorContent Context="menuCtx">
+                                <MudStack Row="true" Spacing="2" @onclick="@(e => menuCtx.ToggleAsync(e))" Style="cursor: pointer;">
+                                    <MudIcon Icon="@IconResolver.Symbol.User" />
+                                @if(_drawerOpen)
+                                {
+                                    <MudText Typo="Typo.subtitle2">@context.User.Identity?.Name</MudText>                                
+                                }
+                            </MudStack>
+                        </ActivatorContent>
+                        <ChildContent>
+                            <MudMenuItem Href="Account/Manage" Icon="@IconResolver.Symbol.Configuration" Label="Manage" />
+                            <MudMenuItem Icon="@IconResolver.Symbol.Logout">
+                                <form action="Account/Logout" method="post">
+                                    <AntiforgeryToken />
+                                    <input type="hidden" name="ReturnUrl" value="@_currentUrl" />
+                                    <button type="submit">
+                                        <MudText>Logout</MudText>
+                                    </button>
+                                </form>
+                            </MudMenuItem>
+                        </ChildContent>
+                    </MudMenu>
+                </Authorized>
+            </AuthorizeView>
+        </div>
+
+    </MudDrawer>
+    <MudMainContent>
+        <div class="mt-8 px-8">
+            @if (!IsAccountPage)
+            {
+                @Body
+            }
+
+        </div>
+    </MudMainContent>
+</MudLayout>
+
+<ManageAccountDialog>
+    @Body
+</ManageAccountDialog>
+
+<MudFileUpload T="IBrowserFile"
+               @ref="_importFileUpload"
+               OnFilesChanged="OnImportFileSelected"
+               Accept=".yrpd,application/json"
+               MaxFileSize="ImportMaxFileSize"
+               Hidden="true"
+               Class="d-none" />
+
+<div id="blazor-error-ui" data-nosnippet>
+    An unhandled error has occurred.
+    <a href="." class="reload">Reload</a>
+    <span class="dismiss">🗙</span>
+</div>
+
+@code {
+    private bool _drawerOpen = true;
+    private YARPadConfigurationStatus? _previousFinalState;
+    private string? _currentUrl;
+    private const long ImportMaxFileSize = 5 * 1024 * 1024;
+    private MudFileUpload<IBrowserFile>? _importFileUpload;
+
+    public string? AppVersion => State.AppInfo.Version != null ? $"v{State.AppInfo.Version.ToString(3)}" : null;
+
+    private MudTheme _theme = new()
+    {
+        PaletteDark = new PaletteDark
+        {
+            Background = "#15161a",
+            Surface = "#1f2125",
+            DrawerBackground = "#1f2125",
+            AppbarBackground = "#1f2125",
+
+            Primary = "#037ad5",
+            PrimaryDarken = "#025DA3",
+            PrimaryLighten = "#0F95FC",
+            Secondary = "#05b093",
+            Dark = "#0F1115",
+
+            TextPrimary = "#E6EAF0",
+            TextSecondary = "#B3BAC6",
+            TextDisabled = "#7A8291",
+            PrimaryContrastText = "#FFFFFF",
+            SecondaryContrastText = "#0F1115",
+            TertiaryContrastText = "#0F1115",
+
+            ActionDefault = "#A0A8B8",
+            ActionDisabled = "#5F6673",
+            ActionDisabledBackground = "#1D2230",
+        },
+        PaletteLight = new PaletteLight()
+        {
+            Background = "#F5F7FB",
+            Surface = "#FFFFFF",
+            DrawerBackground = "#FFFFFF",
+            AppbarBackground = "#FFFFFF",
+
+            Primary = "#037ad5",
+            PrimaryDarken = "#025DA3",
+            PrimaryLighten = "#0F95FC",
+            Secondary = "#05b093",
+            Dark = "#EEF2F7",
+
+            AppbarText = "#1A1F2B",
+            PrimaryContrastText = "#FFFFFF",
+            SecondaryContrastText = "#0F1115",
+            TertiaryContrastText = "#0F1115",
+
+            ActionDefault = "#4E5A6B",
+            ActionDisabled = "#9AA4B2",
+            ActionDisabledBackground = "#E1E6EE",
+        }
+    };
+
+    private bool IsAccountPage => RouteData?.PageType?.Namespace?.StartsWith("CodingCell.YARPad.Components.Account", StringComparison.Ordinal) == true;
+
+    [CascadingParameter]
+    private RouteData? RouteData { get; set; }
+
+    public ConfigurationProfile? SelectedProfile
+    {
+        get => State.CurrentConfigurationProfile.SelectedProfile;
+        set => CurrentConfigurationProfileStateStore.Update(x => x with { SelectedProfile = value });
+    }
+
+    private void DrawerToggle()
+    {
+        _drawerOpen = !_drawerOpen;
+    }
+
+    protected override void RefreshState(MainState state)
+    {
+        if (state.YarpConfigStatus.Status != YARPadConfigurationStatus.Loading && state.YarpConfigStatus.Status != _previousFinalState)
+        {
+            if (_previousFinalState != null || state.YarpConfigStatus.Status == YARPadConfigurationStatus.Invalid || state.YarpConfigStatus.Status == YARPadConfigurationStatus.RevertedToPrevious)
+                Snackbar.Add(state.YarpConfigStatus.Status.ToHelpText(), state.YarpConfigStatus.Status.ToSeverity(), x => { x.SnackbarVariant = Variant.Text; x.RequireInteraction = true; });
+        }
+
+        base.RefreshState(state);
+
+        if (state.YarpConfigStatus.Status != YARPadConfigurationStatus.Loading)
+            _previousFinalState = state.YarpConfigStatus.Status;
+
+        _ = JSRuntime.InvokeVoidAsync("yarpadTheme.setTheme", state.Theme.IsDarkMode);
+
+        var selectedProfile = state.CurrentConfigurationProfile.SelectedProfile;
+        if (selectedProfile != null)
+        {
+            var freshProfile = state.ConfigurationProfile.Profiles.FirstOrDefault(x => x.ID == selectedProfile.ID) ?? State.ConfigurationProfile.ActiveProfile;
+            if (state.CurrentConfigurationProfile.SelectedProfile != freshProfile)
+                CurrentConfigurationProfileStateStore.Update(x => x with { SelectedProfile = freshProfile });
+        }
+    }
+
+    private Task OnAddConfigurationProfileAsync() => OpenConfigurationProfileEditorAsync(new() { Name = "New Config", Configuration = new() }, AddOrCloneConfigurationProfileAsync);
+
+    private Task OnCloneConfigurationProfileAsync()
+    {
+        var source = State.CurrentConfigurationProfile.SelectedProfile;
+        if (source == null)
+            return Task.CompletedTask;
+
+        return OpenConfigurationProfileEditorAsync(source, AddOrCloneConfigurationProfileAsync);
+    }
+
+    private Task OnEditConfigurationProfileAsync()
+    {
+        if (State.CurrentConfigurationProfile.SelectedProfile == null)
+            return Task.CompletedTask;
+
+        return OpenConfigurationProfileEditorAsync(State.CurrentConfigurationProfile.SelectedProfile, EditConfigurationProfileAsync);
+    }
+
+    private async Task OnExportConfigurationProfileAsync()
+    {
+        var selectedProfile = State.CurrentConfigurationProfile.SelectedProfile;
+        if (selectedProfile == null)
+            return;
+
+        var exportModel = new ConfigurationProfileFile
+        {
+            Name = selectedProfile.Name,
+            Description = selectedProfile.Description,
+            Configuration = selectedProfile.Configuration,
+            Version = ConfigurationProfileFile.CurrentVersion
+        };
+
+        var json = JsonSerializer.Serialize(exportModel, new JsonSerializerOptions { WriteIndented = true });
+        var fileName = $"{SanitizeFileName(selectedProfile.Name)}.yrpd";
+
+        await JSRuntime.InvokeVoidAsync("yarpadFile.saveJson", fileName, json);
+    }
+
+    private Task OnImportConfigurationProfileAsync()
+    {
+        return _importFileUpload?.OpenFilePickerAsync() ?? Task.CompletedTask;
+    }
+
+    private async Task OnImportFileSelected(InputFileChangeEventArgs e)
+    {
+        if (e.File == null)
+            return;
+
+        if (e.File.Size > ImportMaxFileSize)
+        {
+            Snackbar.Add("Import file is too large.", Severity.Error);
+            return;
+        }
+
+        try
+        {
+            using var stream = e.File.OpenReadStream(ImportMaxFileSize);
+            using var reader = new StreamReader(stream);
+            var content = await reader.ReadToEndAsync();
+
+            var importedProfile = JsonSerializer.Deserialize<ConfigurationProfileFile>(content);
+            if (importedProfile?.Configuration == null || string.IsNullOrWhiteSpace(importedProfile.Name))
+            {
+                Snackbar.Add("Invalid configuration profile file.", Severity.Error);
+                return;
+            }
+
+            var configurationProfile = new ConfigurationProfile
+            {
+                ID = Guid.Empty,
+                Name = importedProfile.Name,
+                Description = importedProfile.Description,
+                Configuration = importedProfile.Configuration,
+                IsActive = false
+            };
+
+            await OpenConfigurationProfileEditorAsync(configurationProfile, ImportConfigurationProfileAsync);
+        }
+        catch (JsonException)
+        {
+            Snackbar.Add("Configuration profile file is not valid JSON.", Severity.Error);
+        }
+        catch (Exception)
+        {
+            Snackbar.Add("Failed to import configuration profile.", Severity.Error);
+        }
+    }
+
+    private async Task OnDeleteConfigurationProfileAsync()
+    {
+        var selectedProfile = State.CurrentConfigurationProfile.SelectedProfile;
+        if (selectedProfile == null || selectedProfile.IsActive)
+            return;
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, CloseButton = false };
+        var result = await DialogService.ShowMessageBoxAsync("Delete " + selectedProfile.Name, "Are you sure you want to delete this configuration?", "Yes", "No", options: options);
+
+        if (result == true)
+            await ConfigurationProvider.DeleteConfigurationAsync(selectedProfile.ID);
+    }
+
+    private async Task OpenConfigurationProfileEditorAsync(ConfigurationProfile configProfile, Func<ConfigurationProfile, Task> editFunc)
+    {
+        var options = new DialogOptions()
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+        };
+
+        var parameters = new DialogParameters<ConfigurationProfileDialog>()
+        {
+            { x => x.Profile, new ConfigurationProfile()
+                {
+                    ID = configProfile.ID,
+                    Name = configProfile.Name,
+                    Description = configProfile.Description,
+                    Configuration = configProfile.Configuration
+                }
+            },
+        };
+
+        var dialog = await DialogService.ShowAsync<ConfigurationProfileDialog>(null, parameters, options);
+        var result = await dialog.Result;
+
+        if (result == null || result.Canceled || result.Data is not ConfigurationProfile editedConfigProfile)
+            return;
+
+        await editFunc(editedConfigProfile);
+    }
+
+    private async Task AddOrCloneConfigurationProfileAsync(ConfigurationProfile editedConfigProfile)
+    {
+        var configurationEntity = editedConfigProfile.ID == Guid.Empty
+            ? await ConfigurationProvider.CreateConfigurationAsync(editedConfigProfile.Name, editedConfigProfile.Description)
+            : await ConfigurationProvider.CloneConfigurationAsync(editedConfigProfile.ID, editedConfigProfile.Name, editedConfigProfile.Description);
+        var newProfile = configurationEntity.ToConfigurationProfile();
+
+        CurrentConfigurationProfileStateStore.Update(x => x with { SelectedProfile = State.ConfigurationProfile.Profiles.First(x => x.ID == configurationEntity.ID) });
+    }
+
+    private async Task EditConfigurationProfileAsync(ConfigurationProfile editedConfigProfile)
+    {
+        await ConfigurationProvider.UpdateConfigurationAsync(editedConfigProfile.ID, editedConfigProfile.Name, editedConfigProfile.Description);
+    }
+
+    private async Task ImportConfigurationProfileAsync(ConfigurationProfile editedConfigProfile)
+    {
+        var configurationEntity = await ConfigurationProvider.ImportConfigurationAsync(editedConfigProfile);
+        var profile = configurationEntity.ToConfigurationProfile();
+
+        CurrentConfigurationProfileStateStore.Update(x => x with { SelectedProfile = profile });
+    }
+
+    private async Task OnViewYarpConfigAsync()
+    {
+        var selectedProfile = State.CurrentConfigurationProfile.SelectedProfile;
+        if (selectedProfile == null)
+            return;
+
+        var options = new DialogOptions()
+        {
+            MaxWidth = MaxWidth.Large,
+            FullWidth = true,
+        };
+
+        var parameters = new DialogParameters<YarpConfigViewerDialog>()
+        {
+            { x => x.Profile, selectedProfile },
+        };
+
+        await DialogService.ShowAsync<YarpConfigViewerDialog>(null, parameters, options);
+    }
+
+    private static string SanitizeFileName(string fileName)
+    {
+        var invalidChars = Path.GetInvalidFileNameChars();
+        var cleaned = string.Concat(fileName.Select(c => invalidChars.Contains(c) ? '_' : c)).Trim('_');
+
+        return string.IsNullOrWhiteSpace(cleaned) ? "configuration" : cleaned;
+    }
+
+    private async Task OnActivateConfigurationProfileAsync()
+    {
+        var selectedProfile = State.CurrentConfigurationProfile.SelectedProfile;
+        if (selectedProfile == null || selectedProfile.IsActive)
+            return;
+
+        var options = new DialogOptions { CloseOnEscapeKey = true, CloseButton = false };
+        var result = await DialogService.ShowMessageBoxAsync("Activate " + selectedProfile.Name, "Are you sure you want to activate this profile?", "Yes", "No", options: options);
+
+        if (result == true)
+            await ConfigurationProvider.RequestConfigurationActivationAsync(selectedProfile.ID);
+    }
+
+    private void HandleLocationChanged(object? sender, LocationChangedEventArgs e)
+    {
+        _currentUrl = NavigationManager.ToBaseRelativePath(e.Location);
+        StateHasChanged();
+    }
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        _currentUrl = NavigationManager.ToBaseRelativePath(NavigationManager.Uri);
+        NavigationManager.LocationChanged += HandleLocationChanged;
+
+        if (State.ConfigurationProfile.Profiles.Count == 0)
+        {
+            var configurations = await ConfigurationProvider.GetConfigurationsAsync();
+            ConfigurationProfileStateStore.Update(x => configurations.ToState());
+        }
+
+        CurrentConfigurationProfileStateStore.Update(x => x with { SelectedProfile = State.ConfigurationProfile.ActiveProfile });
+    }
+}

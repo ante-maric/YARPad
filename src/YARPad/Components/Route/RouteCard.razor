@@ -1,0 +1,258 @@
+@inject IDialogService DialogService
+@inject IClusterEditorService ClusterEditorService
+@inject IYARPadExtraFeatures ExtraFeatures
+
+<MudCard Elevation="3" Class="border-t-2 mud-border-primary">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                <MudToggleIconButton Toggled="@Route.IsEnabled"
+                                     Color="@ColorResolver.Symbol.ToggleOff"
+                                     ToggledColor="@ColorResolver.Symbol.ToggleOn"
+                                     Icon="@IconResolver.Symbol.ToggleOff"
+                                     ToggledIcon="@IconResolver.Symbol.ToggleOn"
+                                     Size="Size.Large"
+                                     Class="pa-0"
+                                     ToggledChanged="OnToggledAsync" />
+                <MudText Typo="Typo.h6">@Route.RouteID</MudText>
+            </MudStack>
+        </CardHeaderContent>
+        <CardHeaderActions>
+            <MudStack Row="true" Spacing="0">
+                @if (Route.OptionalSectionSwitches.Any(x => x.IsEnabled) || IsPolicyConfigured())
+                {
+                    @foreach (var sectionSwitch in Route.OptionalSectionSwitches.Where(x => x.IsEnabled).Concat(IsPolicyConfigured() ? [new() { Section = RouteConfigSection.General }] : []))
+                    {
+                        <MudChip T="string" Variant="Variant.Text" Class="@sectionSwitch.Section.ToChipColorClasses()">
+                            @(sectionSwitch.Section != RouteConfigSection.General ? sectionSwitch.Section.HumanizeEnum() : "Policies")
+                        </MudChip>
+                    }
+                }
+                else
+                {
+                    <MudChip T="string" Variant="Variant.Text">No customizations</MudChip>
+                }
+                @ExtraFeatures.GetRouteExtraActions(Route)
+                <MudIconButton Icon="@IconResolver.Buttons.Edit" OnClick="EditAsync" />
+                <MudMenu Icon="@IconResolver.Buttons.More">
+                    <MudMenuItem Icon="@IconResolver.Buttons.Clone" OnClick="CloneAsync">Clone</MudMenuItem>
+                    <MudMenuItem Icon="@IconResolver.Buttons.Delete" OnClick="DeleteAsync">Delete</MudMenuItem>
+                </MudMenu>
+            </MudStack>
+        </CardHeaderActions>
+    </MudCardHeader>
+    <MudCardContent Class="pb-0">
+        <MudGrid Class="mb-4">
+            <MudItem xs="12" sm="6">
+                <MudStack AlignItems="AlignItems.Center" Spacing="2">
+                    <MudStack Row="true" Spacing="0" Wrap="Wrap.Wrap" Justify="Justify.Center">
+                        @foreach (var method in Route.Match.Methods)
+                        {
+                            <MudChip Value="@method"
+                                     Text="@method"
+                                     Class="@ColorResolver.GetHttpMethodChipClasses(method)"
+                                     Variant="Variant.Text"
+                                     Size="Size.Small" />
+                        }
+                    </MudStack>
+                    <MudStack Row="true" Spacing="0" Class="flex-wrap justify-center">
+                        @foreach (var host in Route.Match.Hosts)
+                        {
+                            <MudChip Value="@host"
+                                     Text="@host"
+                                     Href="@($"https://{host}")"
+                                     Target="_blank"
+                                     Variant="Variant.Outlined"
+                                     Size="Size.Small" />
+                        }
+                    </MudStack>
+                    <MudText>@Route.Match.Path</MudText>
+                </MudStack>
+            </MudItem>
+            <MudItem xs="12" sm="6">
+                <MudStack AlignItems="AlignItems.Center" Spacing="0">
+                    <MudStack Row="true" Spacing="2">
+                        <MudIcon Icon="@IconResolver.Symbol.Cluster" Color="@ColorResolver.Symbol.Clusters" />
+                        <MudStack Spacing="0">
+                            <MudLink Color="@ColorResolver.Buttons.LinkSubtle" OnClick="@(() => OpenRelatedEntityEditorAsync(Route.ClusterID!))" Disabled="@(Route.ClusterID == null)">@Route.ClusterID</MudLink>
+                            @foreach (var destination in Cluster?.Destinations ?? [])
+                            {
+                                <MudLink Typo="Typo.caption" Href="@destination.Address" Target="_blank" Color="Color.Default">@destination.Address</MudLink>
+                            }
+                        </MudStack>
+                    </MudStack>
+                </MudStack>
+            </MudItem>
+        </MudGrid>
+
+        <div class="ml-n4 mr-n4 rounded border-1 mud-border-surface" style="min-height:0;">
+            <MudExpansionPanel Gutters="false" Class="pl-4 pr-4" Style="background-color:var(--mud-palette-dark);" Dense="true" HeaderClass="thin-expand-header">
+                <ChildContent>
+                    <MudGrid Class="pa-0 pb-4">
+                        <MudItem xs="4">
+                            <ConfigSection Title="Policies"
+                                           Icon="@IconResolver.Symbol.Policy"
+                                           IconColorClass="@ColorResolver.GetPolicySectionIconColorClass(_policies.Count)"
+                                           ChipColorClasses="@ColorResolver.GetPolicySectionChipColorClasses(_policies.Count)"
+                                           ContentClass="ml-6">
+                                @if (!IsPolicyConfigured())
+                                {
+                                    <MudText Class="ml-7" Typo="Typo.caption">Not set</MudText>
+                                }
+                                else
+                                {
+                                    <MudStack Spacing="1">
+                                        @foreach (var policy in _policies)
+                                        {
+                                            <MudStack Row="true" Spacing="1" AlignItems="AlignItems.Center">
+                                                <TopToolTip Delay="0" Text="@policy.Type.HumanizeEnum()">
+                                                    <MudIcon Icon="@policy.Type.ToIcon()" Class="@policy.Type.ToColorClass()" Size="Size.Small" />
+                                                </TopToolTip>
+                                                <MudText Typo="Typo.caption" Class="mb-n1">@policy.PolicyID</MudText>
+                                            </MudStack>
+                                        }
+                                    </MudStack>
+                                }
+                            </ConfigSection>
+                        </MudItem>
+                        <MudItem xs="4">
+                            <ConfigSection Title="Transform"
+                                           Icon="@RouteConfigSection.Transform.ToIcon()"
+                                           IconColorClass="@GetSectionIconColorClass(RouteConfigSection.Transform)"
+                                           ChipColorClasses="@GetSectionChipColorClasses(RouteConfigSection.Transform)"
+                                           ContentClass="ml-6">
+                                @if (!IsTransformConfigured())
+                                {
+                                    <MudText Class="ml-7" Typo="Typo.caption">Not set</MudText>
+                                }
+                                else
+                                {
+                                    <MudStack Spacing="1">
+                                        @foreach (var transform in Route.Transforms.GroupBy(x => x.GetGroup()))
+                                        {
+                                            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                                                <TopToolTip Delay="0" Text="@transform.Key.HumanizeEnum()">
+                                                    <MudIcon Icon="@transform.Key.ToIcon()"
+                                                             Class="@transform.Key.ToColorClass()"
+                                                             Size="Size.Small" />
+                                                </TopToolTip>
+                                                <MudText Typo="Typo.caption">@("transform".ToQuantity(transform.Count()))</MudText>
+                                            </MudStack>
+                                        }
+                                    </MudStack>
+                                }
+                            </ConfigSection>
+                        </MudItem>
+                        <MudItem xs="4">
+                            <ConfigSection Title="Metadata"
+                                           Icon="@RouteConfigSection.Metadata.ToIcon()"
+                                           IconColorClass="@GetSectionIconColorClass(RouteConfigSection.Metadata)"
+                                           ChipColorClasses="@GetSectionChipColorClasses(RouteConfigSection.Metadata)"
+                                           ContentClass="ml-6">
+                                @if (!IsMetadataConfigured())
+                                {
+                                    <MudText Class="ml-7" Typo="Typo.caption">Not set</MudText>
+                                }
+                                else
+                                {
+                                    <MudStack Spacing="1">
+                                        @foreach (var metadata in Route.Metadata)
+                                        {
+                                            <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                                                <MudIcon Icon="@IconResolver.Symbol.Label"
+                                                         Class="@ColorResolver.Symbol.Label"
+                                                         Size="Size.Small" />
+                                                <MudText Typo="Typo.caption">@($"{metadata.Key}: {metadata.Value}")</MudText>
+                                            </MudStack>
+                                        }
+                                    </MudStack>
+                                }
+                            </ConfigSection>
+                        </MudItem>
+                    </MudGrid>
+                </ChildContent>
+            </MudExpansionPanel>
+        </div>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    private List<(PolicyType Type, string PolicyID)> _policies = [];
+
+    [Parameter, EditorRequired]
+    public required RouteModel Route { get; set; }
+
+    [Parameter, EditorRequired]
+    public required ClusterModel Cluster { get; set; }
+
+    [Parameter, EditorRequired]
+    public required Guid ConfigurationProfileID { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<RouteModel> OnEdit { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<RouteModel> OnClone { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<RouteModel> OnDelete { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<(RouteModel Route, bool IsEnabled)> OnToggled { get; set; }
+
+    private string GetSectionIconColorClass(RouteConfigSection section)
+    {
+        return Route.SectionSwitches[section].IsEnabled
+            ? section.ToIconColorClass()
+            : YarpadColor.Gray;
+    }
+
+    private string GetSectionChipColorClasses(RouteConfigSection section)
+    {
+        return Route.SectionSwitches[section].IsEnabled
+            ? section.ToChipColorClasses()
+            : YarpadColor.Gray;
+    }
+
+    private bool IsPolicyConfigured() => _policies.Count > 0;
+
+    private bool IsTransformConfigured() => Route.Transforms.Count > 0;
+
+    private bool IsMetadataConfigured() => Route.Metadata.Count > 0;
+
+    private async Task EditAsync() => await OnEdit.InvokeAsync(Route);
+
+    private async Task CloneAsync() => await OnClone.InvokeAsync(Route);
+
+    private async Task OnToggledAsync(bool isEnabled) => await OnToggled.InvokeAsync((Route, isEnabled));
+
+    private async Task DeleteAsync()
+    {
+        var options = new DialogOptions { CloseOnEscapeKey = true, CloseButton = false };
+        var result = await DialogService.ShowMessageBoxAsync("Delete " + Route.RouteID, "Are you sure you want to delete this route?", "Yes", "No", options: options);
+
+        if (result == true)
+            await OnDelete.InvokeAsync(Route);
+    }
+
+    private async Task OpenRelatedEntityEditorAsync(string entityID)
+    {
+        await ClusterEditorService.OpenAsync(ConfigurationProfileID, entityID, true);
+    }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        _policies =
+            [
+                (PolicyType.Authorization, Route.AuthorizationPolicy!),
+                (PolicyType.RateLimiter, Route.RateLimiterPolicy!),
+                (PolicyType.OutputCache, Route.OutputCachePolicy!),
+                (PolicyType.Timeout, Route.TimeoutPolicy!),
+                (PolicyType.Cors, Route.CorsPolicy!),
+            ];
+
+        _policies.RemoveAll(x => x.PolicyID == null);
+    }
+}

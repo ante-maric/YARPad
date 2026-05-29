@@ -1,0 +1,8 @@
+<TopToolTip Text="@Tooltips.Transforms_RequestHeaderOriginalHost_Field">
+    <MudSwitch T="bool" Label="ⓘ Preserve original Host header" @bind-Value="Transform.RequestHeaderOriginalHost" Color="@ColorResolver.Buttons.Switch" />
+</TopToolTip>
+
+@code {
+    [Parameter, EditorRequired]
+    public required RequestHeaderOriginalHostTransform Transform { get; set; }
+}

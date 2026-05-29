@@ -1,0 +1,99 @@
+@using System.Text.Json
+@using System.Text.Json.Nodes
+@using AutoMapper
+@using Yarp.ReverseProxy.Configuration
+
+@inject IMapper Mapper;
+@inject IJSRuntime JSRuntime
+@inject ISnackbar Snackbar
+
+<MudDialog Style="height: calc(100% - 64px);" Class="border mud-border-primary-darken">
+    <TitleContent>
+        <MudText Typo="Typo.h6">YARP Configuration</MudText>
+        <MudText Typo="Typo.caption">@Profile.Name — as seen by YARP (appsettings.json format)</MudText>
+    </TitleContent>
+    <DialogContent>
+        <MudPaper Outlined="true" Style="height: max(200px, calc(100vh - 270px)); overflow: hidden;">
+            <pre style="margin: 0; padding: 12px; height: 100%; overflow-y: auto; font-size: 0.78rem; white-space: pre; box-sizing: border-box;">@_json</pre>
+        </MudPaper>
+    </DialogContent>
+    <DialogActions>
+        <MudButton StartIcon="@IconResolver.Buttons.Clone" OnClick="CopyToClipboardAsync">Copy</MudButton>
+        <MudButton Color="@ColorResolver.Buttons.Save" OnClick="Close">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private static readonly JsonSerializerOptions _jsonOptions = new()
+    {
+        WriteIndented = true,
+        DefaultIgnoreCondition = System.Text.Json.Serialization.JsonIgnoreCondition.WhenWritingNull,
+        Converters =
+        {
+            new System.Text.Json.Serialization.JsonStringEnumConverter()
+        }
+    };
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public required ConfigurationProfile Profile { get; set; }
+
+    private string _json = string.Empty;
+
+    protected override void OnInitialized()
+    {
+        var config = Mapper.Map<YarpConfig>(Profile.Configuration);
+        _json = BuildJson(config);
+    }
+
+    private static string BuildJson(IProxyConfig config)
+    {
+        var routes = config.Routes
+            .OrderBy(r => r.RouteId)
+            .ToDictionary(r => r.RouteId, BuildRouteNode);
+
+        var clusters = config.Clusters
+            .OrderBy(c => c.ClusterId)
+            .ToDictionary(c => c.ClusterId, BuildClusterNode);
+
+        var root = new { ReverseProxy = new { Routes = routes, Clusters = clusters } };
+        return JsonSerializer.Serialize(root, _jsonOptions);
+    }
+
+    private static JsonNode? BuildRouteNode(RouteConfig route)
+    {
+        var node = JsonSerializer.SerializeToNode(route, _jsonOptions)?.AsObject();
+        if (node is null)
+            return null;
+
+        node.Remove("RouteId");
+        return node;
+    }
+
+    private static JsonNode? BuildClusterNode(ClusterConfig cluster)
+    {
+        var node = JsonSerializer.SerializeToNode(cluster, _jsonOptions)?.AsObject();
+        if (node is null)
+            return null;
+
+        node.Remove("ClusterId");
+        return node;
+    }
+
+    private async Task CopyToClipboardAsync()
+    {
+        try
+        {
+            await JSRuntime.InvokeVoidAsync("navigator.clipboard.writeText", _json);
+            Snackbar.Add("Configuration copied to clipboard.", Severity.Success);
+        }
+        catch
+        {
+            Snackbar.Add("Failed to copy to clipboard.", Severity.Error);
+        }
+    }
+
+    private void Close() => MudDialog.Close();
+}

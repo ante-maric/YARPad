@@ -1,0 +1,96 @@
+@page "/custom-transforms"
+
+@attribute [Authorize]
+@inherits StateComponentBase<CurrentConfigurationProfileState>
+
+@inject IYARPadConfigurationProvider ConfigurationProvider
+@inject IDialogService DialogService
+
+<div style="max-width:900px;">
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIcon Icon="@IconResolver.Symbol.CustomTransform" Color="Color.Primary" Size="Size.Large" />
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.h4">Custom Transforms</MudText>
+                <MudText Typo="Typo.caption">Transform definitions available when configuring routes</MudText>
+            </MudStack>
+        </MudStack>
+
+        @if (State.SelectedProfile == null || State.SelectedProfile.Configuration.CustomTransforms.Count == 0)
+        {
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudText Typo="Typo.body2">No custom transforms defined.</MudText>
+            </MudPaper>
+        }
+        else
+        {
+            @foreach (var transform in State.SelectedProfile.Configuration.CustomTransforms)
+            {
+                <CustomTransformCard Definition="transform" UsedBy="@GetUsedBy(transform.Type)" OnEdit="EditTransformAsync" OnClone="CloneTransformAsync" OnDelete="DeleteTransformAsync" />
+            }
+        }
+    </MudStack>
+</div>
+
+<MudFab Color="@ColorResolver.Buttons.AddSubtle" StartIcon="@IconResolver.Buttons.AddSubtle" Class="ma-4 fixed" Style="bottom: 0; right: 0;" OnClick="AddTransformAsync" />
+
+@code {
+    private async Task AddTransformAsync()
+        => await OpenTransformDialogAsync(new CustomTransformDefinition() { Type = "" });
+
+    private async Task EditTransformAsync(CustomTransformDefinition transform)
+        => await OpenTransformDialogAsync(transform.DeepClone(), transform.Type);
+
+    private async Task CloneTransformAsync(CustomTransformDefinition transform)
+    {
+        var cloned = transform.DeepClone();
+        cloned.Type += " Cloned";
+
+        await OpenTransformDialogAsync(cloned);
+    }
+
+    private async Task DeleteTransformAsync(CustomTransformDefinition transform)
+    {
+        if (State.SelectedProfile == null)
+            return;
+
+        await ConfigurationProvider.DeleteCustomTransformAsync(State.SelectedProfile.ID, State.SelectedProfile.Configuration, transform);
+    }
+
+    private List<string> GetUsedBy(string transformType)
+    {
+        if (State.SelectedProfile == null)
+            return [];
+
+        return State.SelectedProfile.Configuration.Routes
+            .Where(r => r.Transforms.OfType<CustomTransform>().Any(t => t.CustomTransformType == transformType))
+            .Select(r => r.RouteID)
+            .ToList();
+    }
+
+    private async Task OpenTransformDialogAsync(CustomTransformDefinition transform, string? originalType = null)
+    {
+        var options = new DialogOptions()
+        {
+            MaxWidth = MaxWidth.Medium,
+            FullWidth = true,
+        };
+
+        var parameters = new DialogParameters<CustomTransformDialog>()
+        {
+            { x => x.Transform, transform },
+            { x => x.OriginalType, originalType },
+        };
+
+        var dialog = await DialogService.ShowAsync<CustomTransformDialog>(null, parameters, options);
+        var result = await dialog.Result;
+
+        if (result == null || result.Canceled || result.Data is not CustomTransformDefinition savedTransform)
+            return;
+
+        if (State.SelectedProfile == null)
+            return;
+
+        await ConfigurationProvider.SaveCustomTransformAsync(State.SelectedProfile.ID, State.SelectedProfile.Configuration, originalType, savedTransform);
+    }
+}

@@ -1,0 +1,31 @@
+<MudTooltip Arrow="true" Delay="@Delay" Placement="Placement.Top" Inline="@Inline" @attributes="UserAttributes">
+    <ChildContent>
+        @ChildContent
+    </ChildContent>
+    <TooltipContent>
+        @if (!string.IsNullOrEmpty(Text))
+        {
+            @((MarkupString)Text.SplitToLines(MaxLineLength))
+        }
+    </TooltipContent>
+</MudTooltip>
+
+@code {
+    [Parameter] 
+    public string? Text { get; set; }
+
+    [Parameter] 
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public int MaxLineLength { get; set; } = 60;
+
+    [Parameter]
+    public int Delay { get; set; } = 1000;
+
+    [Parameter]
+    public bool Inline { get; set; } = true;
+
+    [Parameter(CaptureUnmatchedValues = true)] 
+    public Dictionary<string, object?>? UserAttributes { get; set; }
+}

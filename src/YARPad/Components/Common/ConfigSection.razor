@@ -1,0 +1,31 @@
+﻿<MudStack Spacing="2">
+    <MudChip T="string" Variant="Variant.Text" Class="@ChipColorClasses" Size="Size.Small">
+        <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+            <MudIcon Icon="@Icon" Class="@IconColorClass" Size="Size.Small" />
+            <MudText>@Title</MudText>
+        </MudStack>
+    </MudChip>
+    <div class="@ContentClass">
+        @ChildContent
+    </div>
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired]
+    public required string Icon { get; set; }
+
+    [Parameter, EditorRequired]
+    public string IconColorClass { get; set; }
+
+    [Parameter, EditorRequired]
+    public string ChipColorClasses { get; set; }
+
+    [Parameter, EditorRequired]
+    public required string Title { get; set; }
+
+    [Parameter]
+    public RenderFragment? ChildContent { get; set; }
+
+    [Parameter]
+    public string? ContentClass { get; set; }
+}

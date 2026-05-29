@@ -1,0 +1,71 @@
+<MudStack Spacing="2">
+    <TopToolTip Text="@Tooltips.Transforms_ResponseTrailer_Name">
+        <MudTextField Label="ⓘ Response Trailer"
+                      @bind-Value="Transform.ResponseTrailer"
+                      For="@(() => Transform.ResponseTrailer)"
+                      Variant="Variant.Outlined"
+                      Margin="Margin.Dense" />
+    </TopToolTip>
+
+    <MudStack Row="true">
+        <TopToolTip Text="@Tooltips.Transforms_ResponseTrailer_ChangeType" RootClass="mt-2">
+            <MudToggleGroup T="BasicTransformAction" @bind-Value="ActionType" Outlined="true" Delimiters="true" Size="Size.Medium" Color="@ColorResolver.Buttons.Toggle">
+                <MudToggleItem Value="@BasicTransformAction.Set">Replace</MudToggleItem>
+                <MudToggleItem Value="@BasicTransformAction.Append">Add</MudToggleItem>
+            </MudToggleGroup>
+        </TopToolTip>
+
+        @if (ActionType == BasicTransformAction.Set)
+        {
+            <TopToolTip Text="@Tooltips.Transforms_ResponseTrailer_Set" RootClass="d-flex flex-grow-1">
+                <MudTextField Label="ⓘ Value"
+                              @bind-Value="Transform.Set"
+                              For="@(() => Transform.Set)"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense" />
+            </TopToolTip>
+        }
+        else
+        {
+            <TopToolTip Text="@Tooltips.Transforms_ResponseTrailer_Append" RootClass="d-flex flex-grow-1">
+                <MudTextField Label="ⓘ Value"
+                              @bind-Value="Transform.Append"
+                              For="@(() => Transform.Append)"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense" />
+            </TopToolTip>
+        }
+    </MudStack>
+
+    <TopToolTip Text="@Tooltips.Transforms_ResponseTrailer_When">
+        <MudSelect Label="ⓘ When" @bind-Value="Transform.When" Variant="Variant.Outlined" Margin="Margin.Dense">
+            @foreach (ResponseTransformCondition item in Enum.GetValues(typeof(ResponseTransformCondition)))
+            {
+                <MudSelectItem Value="@((ResponseTransformCondition?)item)">@item.ToString()</MudSelectItem>
+            }
+        </MudSelect>
+    </TopToolTip>
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired]
+    public required ResponseTrailerTransform Transform { get; set; }
+
+    private BasicTransformAction ActionType
+    {
+        get => Transform.Append != null ? BasicTransformAction.Append : BasicTransformAction.Set;
+        set
+        {
+            if (value == BasicTransformAction.Set)
+            {
+                Transform.Append = null;
+                Transform.Set = string.Empty;
+            }
+            else
+            {
+                Transform.Set = null;
+                Transform.Append = string.Empty;
+            }
+        }
+    }
+}

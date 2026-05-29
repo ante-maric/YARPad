@@ -1,0 +1,176 @@
+﻿@if (!IsEnabled)
+{
+    <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-4">
+        This configuration section is disabled. Enable it to allow edits.
+    </MudAlert>
+}
+
+<MudGrid Spacing="4">
+    <MudItem xs="12">
+        <TopToolTip Text="@Tooltips.HealthCheck_AvailableDestinationsPolicy"
+                    RootClass="d-flex flex-auto">
+            <MudSelect Label="ⓘ Available Destinations Policy"
+                       @bind-Value="HealthCheck.AvailableDestinationsPolicy"
+                       For="@(() => Cluster.HealthCheck.AvailableDestinationsPolicy)"
+                       Variant="Variant.Outlined"
+                       Clearable="true"
+                       Dense="true"
+                       Margin="Margin.Dense"
+                       Disabled="@(!IsEnabled)"
+                       HelperText="@AvailableDestinationsPolicies.GetPolicyDescription(HealthCheck.AvailableDestinationsPolicy)">
+                @foreach (var policy in AvailableDestinationsPolicies)
+                {
+                    <MudSelectItem Value="@policy.ID">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                            <MudIcon 
+                                Icon="@IconResolver.GetAvailableDestinationsPolicyIcon(@policy.ID)" 
+                                     Class="@ColorResolver.GetAvailableDestinationsPolicyColorClass(@policy.ID)" 
+                                     Size="Size.Small" />
+                            @policy.Name
+                        </MudStack>
+                    </MudSelectItem>
+                }
+            </MudSelect>
+        </TopToolTip>
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudCard Outlined="true">
+            <MudCardHeader>
+                <TopToolTip Text="@Tooltips.HealthCheck_Passive_Title">
+                    <MudText Typo="Typo.subtitle1">ⓘ Passive Health Check</MudText>
+                </TopToolTip>
+            </MudCardHeader>
+            <MudCardContent Class="pt-0">
+                <MudStack Spacing="2">
+                    <TopToolTip Text="@Tooltips.HealthCheck_Passive_Enabled">
+                        <MudCheckBox Label="ⓘ Enabled"
+                                     @bind-Value="HealthCheck.Passive.Enabled"
+                                     For="@(() => Cluster.HealthCheck.Passive.Enabled)"
+                                     Dense="true"
+                                     Disabled="@(!IsEnabled)" />
+                    </TopToolTip>
+                    <TopToolTip Text="@Tooltips.HealthCheck_Passive_ReactivationPeriod">
+                        <MudTextField T="TimeSpan ?"
+                                      Label="ⓘ Reactivation Period"
+                                      @bind-Value="HealthCheck.Passive.ReactivationPeriod"
+                                      For="@(() => Cluster.HealthCheck.Passive.ReactivationPeriod)"
+                                      Converter="@FieldConverters.TimeSpan"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Disabled="@(!IsEnabled)" />
+                    </TopToolTip>
+                    <TopToolTip Text="@Tooltips.HealthCheck_Passive_Policy">
+                        <MudSelect Label="ⓘ Policy"
+                                   @bind-Value="HealthCheck.Passive.Policy"
+                                   For="@(() => Cluster.HealthCheck.Passive.Policy)"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   Dense="true"
+                                   Margin="Margin.Dense"
+                                   Disabled="@(!IsEnabled)"
+                                   HelperText="@PassivePolicies.GetPolicyDescription(HealthCheck.Passive.Policy)">
+                            @foreach (var policy in PassivePolicies)
+                            {
+                                <MudSelectItem Value="@policy.ID">@policy.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </TopToolTip>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+
+    <MudItem xs="6">
+        <MudCard Outlined="true">
+            <MudCardHeader>
+                <TopToolTip Text="@Tooltips.HealthCheck_Active_Title">
+                    <MudText Typo="Typo.subtitle1">ⓘ Active Health Check</MudText>
+                </TopToolTip>
+            </MudCardHeader>
+            <MudCardContent Class="pt-0">
+                <MudStack Spacing="2">
+                    <TopToolTip Text="@Tooltips.HealthCheck_Active_Enabled">
+                        <MudCheckBox Label="ⓘ Enabled"
+                                     @bind-Value="HealthCheck.Active.Enabled"
+                                     For="@(() => Cluster.HealthCheck.Active.Enabled)"
+                                     Dense="true"
+                                     Disabled="@(!IsEnabled)" />
+                    </TopToolTip>
+                    <TopToolTip Text="@Tooltips.HealthCheck_Active_Path">
+                        <MudTextField Label="ⓘ Path"
+                                      @bind-Value="HealthCheck.Active.Path"
+                                      For="@(() => Cluster.HealthCheck.Active.Path)"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Disabled="@(!IsEnabled)" />
+                    </TopToolTip>
+                    <TopToolTip Text="@Tooltips.HealthCheck_Active_Query">
+                        <MudTextField Label="ⓘ Query"
+                                      @bind-Value="HealthCheck.Active.Query"
+                                      For="@(() => Cluster.HealthCheck.Active.Query)"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Disabled="@(!IsEnabled)" />
+                    </TopToolTip>
+                    <TopToolTip Text="@Tooltips.HealthCheck_Active_Interval">
+                        <MudTextField T="TimeSpan ?"
+                                      Label="ⓘ Interval"
+                                      @bind-Value="HealthCheck.Active.Interval"
+                                      For="@(() => Cluster.HealthCheck.Active.Interval)"
+                                      Converter="@FieldConverters.TimeSpan"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Disabled="@(!IsEnabled)" />
+                    </TopToolTip>
+                    <TopToolTip Text="@Tooltips.HealthCheck_Active_Timeout">
+                        <MudTextField T="TimeSpan ?"
+                                      Label="ⓘ Timeout"
+                                      @bind-Value="HealthCheck.Active.Timeout"
+                                      For="@(() => Cluster.HealthCheck.Active.Timeout)"
+                                      Converter="@FieldConverters.TimeSpan"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense"
+                                      Disabled="@(!IsEnabled)" />
+                    </TopToolTip>
+                    <TopToolTip Text="@Tooltips.HealthCheck_Active_Policy">
+                        <MudSelect Label="ⓘ Policy"
+                                   @bind-Value="HealthCheck.Active.Policy"
+                                   For="@(() => Cluster.HealthCheck.Active.Policy)"
+                                   Variant="Variant.Outlined"
+                                   Clearable="true"
+                                   Dense="true"
+                                   Margin="Margin.Dense"
+                                   Disabled="@(!IsEnabled)"
+                                   HelperText="@ActivePolicies.GetPolicyDescription(HealthCheck.Active.Policy)">
+                            @foreach (var policy in ActivePolicies)
+                            {
+                                <MudSelectItem Value="@policy.ID">@policy.Name</MudSelectItem>
+                            }
+                        </MudSelect>
+                    </TopToolTip>
+                </MudStack>
+            </MudCardContent>
+        </MudCard>
+    </MudItem>
+</MudGrid>
+
+@code {
+    [CascadingParameter]
+    private ClusterModel Cluster { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public required HealthCheckModel HealthCheck { get; set; }
+
+    [Parameter, EditorRequired]
+    public required List<PolicyInfo> ActivePolicies { get; set; }
+
+    [Parameter, EditorRequired]
+    public required List<PolicyInfo> PassivePolicies { get; set; }
+
+    [Parameter, EditorRequired]
+    public required List<PolicyInfo> AvailableDestinationsPolicies { get; set; }
+
+    [Parameter, EditorRequired]
+    public bool IsEnabled { get; set; }
+}

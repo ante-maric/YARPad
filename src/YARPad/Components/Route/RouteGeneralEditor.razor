@@ -1,0 +1,153 @@
+<MudStack Spacing="2">
+    <TopToolTip Text="@Tooltips.Route_ClusterId">
+        <MudStack Row="true" Spacing="1">
+            <MudSelect Label="ⓘ Cluster"
+                       @bind-Value="Route.ClusterID"
+                       For="(() => Route.ClusterID)"
+                       Variant="Variant.Outlined"
+                       Clearable="true"
+                       AdornmentIcon="@IconResolver.Buttons.Edit"
+                       OnAdornmentClick="EditClusterAsync"
+                       Margin="Margin.Dense"
+                       Dense="true">
+                @foreach (var cluster in Clusters)
+                {
+                    <MudSelectItem Value="@cluster.ClusterID">@cluster.ClusterID</MudSelectItem>
+                }
+            </MudSelect>
+            <MudIconButton Icon="@IconResolver.Buttons.Add" Color="@ColorResolver.Buttons.Add" OnClick="CreateClusterAsync" />
+            <MudIconButton Icon="@IconResolver.Buttons.Clone" OnClick="CloneClusterAsync" />
+        </MudStack>
+    </TopToolTip>
+    <TopToolTip Text="@Tooltips.Route_MaxRequestBodySize">
+        <MudNumericField Label="ⓘ Max Request Body Size"
+                         @bind-Value="Route.MaxRequestBodySize"
+                         For="@(() => Route.MaxRequestBodySize)"
+                         Min="-1"
+                         Variant="Variant.Outlined"
+                         Margin="Margin.Dense" />
+    </TopToolTip>
+    <TopToolTip Text="@Tooltips.Route_AuthorizationPolicy">
+        <MudSelect T="string" Label="ⓘ Authorization Policy"
+                   @bind-Value="Route.AuthorizationPolicy"
+                   For="@(() => Route.AuthorizationPolicy)"
+                   Clearable="true"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   Dense="true"
+                   HelperText="@AuthorizationPolicies.GetPolicyDescription(Route.AuthorizationPolicy)">
+            @foreach (var policy in AuthorizationPolicies)
+            {
+                <MudSelectItem Value="@policy.ID">@policy.ID.HumanizeTitle()</MudSelectItem>
+            }
+        </MudSelect>
+    </TopToolTip>
+    <TopToolTip Text="@Tooltips.Route_RateLimiterPolicy">
+        <MudSelect T="string" Label="ⓘ Rate Limiter Policy"
+                   @bind-Value="Route.RateLimiterPolicy"
+                   For="@(() => Route.RateLimiterPolicy)"
+                   Clearable="true"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   Dense="true"
+                   HelperText="@RateLimiterPolicies.GetPolicyDescription(Route.RateLimiterPolicy)">
+            @foreach (var policy in RateLimiterPolicies)
+            {
+                <MudSelectItem Value="@policy.ID">@policy.ID.HumanizeTitle()</MudSelectItem>
+            }
+        </MudSelect>
+    </TopToolTip>
+    <TopToolTip Text="@Tooltips.Route_OutputCachePolicy">
+        <MudSelect T="string" Label="ⓘ Output Cache Policy"
+                   @bind-Value="Route.OutputCachePolicy"
+                   For="@(() => Route.OutputCachePolicy)"
+                   Clearable="true"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   Dense="true">
+            @foreach (var policy in OutputCachePolicies)
+            {
+                <MudSelectItem Value="@policy.ID">@policy.ID.HumanizeTitle()</MudSelectItem>
+            }
+        </MudSelect>
+    </TopToolTip>
+    <MudStack Row="true" Spacing="2" StretchItems="StretchItems.All">
+        <TopToolTip Text="@Tooltips.Route_Timeout"
+                    RootClass="flex-basis-0">
+            <MudTextField Label="ⓘ Timeout"
+                          @bind-Value="Route.Timeout"
+                          For="@(() => Route.Timeout)"
+                          Variant="Variant.Outlined"
+                          Margin="Margin.Dense" />
+        </TopToolTip>
+        <TopToolTip Text="@Tooltips.Route_TimeoutPolicy"
+                    RootClass="flex-basis-0">
+            <MudSelect T="string" Label="ⓘ Timeout Policy"
+                       @bind-Value="Route.TimeoutPolicy"
+                       For="@(() => Route.TimeoutPolicy)"
+                       Clearable="true"
+                       Variant="Variant.Outlined"
+                       Margin="Margin.Dense"
+                       Dense="true"
+                       HelperText="@TimeoutPolicies.GetPolicyDescription(Route.TimeoutPolicy)">
+                @foreach (var policy in TimeoutPolicies)
+                {
+                    <MudSelectItem Value="@policy.ID">@policy.ID.HumanizeTitle()</MudSelectItem>
+                }
+            </MudSelect>
+        </TopToolTip>
+    </MudStack>
+    <TopToolTip Text="@Tooltips.Route_CorsPolicy">
+        <MudSelect T="string" Label="ⓘ CORS Policy"
+                   @bind-Value="Route.CorsPolicy"
+                   For="@(() => Route.CorsPolicy)"
+                   Clearable="true"
+                   Variant="Variant.Outlined"
+                   Margin="Margin.Dense"
+                   Dense="true"
+                   HelperText="@CorsPolicies.GetPolicyDescription(Route.CorsPolicy)">
+            @foreach (var policy in CorsPolicies)
+            {
+                <MudSelectItem Value="@policy.ID">@policy.ID.HumanizeTitle()</MudSelectItem>
+            }
+        </MudSelect>
+    </TopToolTip>
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired]
+    public required RouteModel Route { get; set; }
+
+    [Parameter, EditorRequired]
+    public required List<ClusterModel> Clusters { get; set; }
+
+    [Parameter, EditorRequired]
+    public required List<PolicyInfo> AuthorizationPolicies { get; set; }
+
+    [Parameter, EditorRequired]
+    public List<PolicyInfo> RateLimiterPolicies { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public List<PolicyInfo> OutputCachePolicies { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public List<PolicyInfo> TimeoutPolicies { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public List<PolicyInfo> CorsPolicies { get; set; } = [];
+
+    [Parameter, EditorRequired]
+    public EventCallback<string> OnEditCluster { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback OnCreateCluster { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<string> OnCloneCluster { get; set; }
+
+    private async Task EditClusterAsync() => await OnEditCluster.InvokeAsync(Route.ClusterID);
+
+    private async Task CreateClusterAsync() => await OnCreateCluster.InvokeAsync();
+
+    private async Task CloneClusterAsync() => await OnCloneCluster.InvokeAsync(Route.ClusterID);
+}

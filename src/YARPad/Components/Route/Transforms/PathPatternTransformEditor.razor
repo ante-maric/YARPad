@@ -1,0 +1,12 @@
+<TopToolTip Text="@Tooltips.Transforms_PathPattern_Field">
+    <MudTextField Label="ⓘ Path Pattern"
+                  @bind-Value="Transform.PathPattern"
+                  For="@(() => Transform.PathPattern)"
+                  Variant="Variant.Outlined"
+                  Margin="Margin.Dense" />
+</TopToolTip>
+
+@code {
+    [Parameter, EditorRequired]
+    public required PathPatternTransform Transform { get; set; }
+}

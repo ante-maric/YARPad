@@ -1,0 +1,30 @@
+namespace CodingCell.YARPad;
+
+public enum RouteTransformType
+{
+    RequestHeadersCopy,
+    RequestHeaderOriginalHost,
+    RequestHeader,
+    PathRemovePrefix,
+    PathSet,
+    PathPrefix,
+    QueryRouteParameter,
+    PathPattern,
+    QueryValueParameter,
+    QueryRemoveParameter,
+    HttpMethodChange,
+    RequestHeaderRouteValue,
+    RequestHeaderRemove,
+    RequestHeadersAllowed,
+    XForwarded,
+    Forwarded,
+    ClientCert,
+    ResponseHeadersCopy,
+    ResponseHeader,
+    ResponseHeaderRemove,
+    ResponseHeadersAllowed,
+    ResponseTrailersCopy,
+    ResponseTrailer,
+    ResponseTrailerRemove,
+    ResponseTrailersAllowed,
+}

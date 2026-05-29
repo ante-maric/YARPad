@@ -1,0 +1,27 @@
+﻿<MudDialog Style="height: 400px" Class="border mud-border-primary-darken">
+
+    <TitleContent>
+        <MudText Typo="Typo.h6">Yarp Validation Errors</MudText>
+        <MudText Typo="Typo.caption">There is some discrepancy between YARPad validation and Yarp validation. Normally, this should not happen, but at least this should give you an idea how to fix it.</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        @foreach (var error in Errors)
+        {
+            <MudAlert Severity="Severity.Error" Dense="true" Class="mb-2">@error</MudAlert>
+        }
+    </DialogContent>
+    <DialogActions>
+        <MudButton Color="@ColorResolver.Buttons.Save" OnClick="Ok">Close</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+    
+    [Parameter, EditorRequired]
+    public required List<string> Errors { get; set; }
+
+    private void Ok() => MudDialog.Close(DialogResult.Ok(true));
+}

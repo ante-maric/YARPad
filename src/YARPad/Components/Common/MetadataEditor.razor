@@ -1,0 +1,123 @@
+@using System.Linq.Expressions
+@typeparam TParent
+
+@inject IDialogService DialogService
+
+@if (!IsEnabled)
+{
+    <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-4">
+        This configuration section is disabled. Enable it to allow edits.
+    </MudAlert>
+}
+
+<MudStack Spacing="2">
+    <CustomInput T="List<YarpMetadata>" For="@ForMetadata">
+        <MudSimpleTable Class="overflow-x-auto" Bordered="true" Outlined="true">
+            <thead>
+                <tr>
+                    <th>Key</th>
+                    <th>Value</th>
+                    <th style="width:1%; white-space:nowrap; text-align:center;">
+                        <MudIconButton Icon="@IconResolver.Buttons.Add"
+                                       Color="@ColorResolver.Buttons.Add"
+                                       Size="Size.Small"
+                                       Disabled="@(!IsEnabled)"
+                                       OnClick="AddMetadataAsync" />
+                    </th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var item in Metadata)
+                {
+                    <tr>
+                        <td><MudText>@item.Key</MudText></td>
+                        <td><MudText>@item.Value</MudText></td>
+                        <td>
+                            <MudStack Row="true" Spacing="2" Justify="Justify.Center">
+                                <MudIconButton Icon="@IconResolver.Buttons.Edit"
+                                               Color="@ColorResolver.Buttons.Edit"
+                                               Size="Size.Small"
+                                               Disabled="@(!IsEnabled)"
+                                               OnClick="@(() => EditMetadataAsync(item.Key, item))" />
+                                <MudIconButton Icon="@IconResolver.Buttons.Delete"
+                                               Color="@ColorResolver.Buttons.Delete"
+                                               Size="Size.Small"
+                                               Disabled="@(!IsEnabled)"
+                                               OnClick="@(() => RemoveMetadata(item))" />
+                            </MudStack>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </MudSimpleTable>
+    </CustomInput>
+
+    @if (Metadata.Count == 0)
+    {
+        <MudAlert Severity="Severity.Info" Dense="true">No metadata defined.</MudAlert>
+    }
+</MudStack>
+
+    @code {
+    [CascadingParameter]
+    private TParent Parent { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public required List<YarpMetadata> Metadata { get; set; }
+
+    [Parameter, EditorRequired]
+    public bool IsEnabled { get; set; }
+
+    [Parameter, EditorRequired]
+    public required Expression<Func<List<YarpMetadata>>> ForMetadata { get; set; }
+
+    [Parameter]
+    public List<string> SuggestedKeys { get; set; } = [];
+
+    private async Task AddMetadataAsync()
+    {
+        var newKey = GetUniqueKey("key");
+        await EditMetadataAsync(null, new YarpMetadata { Key = newKey, Value = string.Empty });
+    }
+
+    private async Task EditMetadataAsync(string? metadataKey, YarpMetadata metadata)
+    {
+        var parameters = new DialogParameters<MetadataDialog>()
+        {
+            { x => x.MetadataKey, metadataKey },
+            { x => x.Metadata, metadata with { } },
+            { x => x.MetadataList, Metadata },
+            { x => x.SuggestedKeys, SuggestedKeys }
+        };
+
+        var dialog = await DialogService.ShowAsync<MetadataDialog>(null, parameters);
+        var result = await dialog.Result;
+        if (result?.Canceled == true || result?.Data is not YarpMetadata editedMetadata)
+            return;
+
+        if (metadataKey == null)
+            Metadata.Add(editedMetadata);
+        else
+        {
+            var existing = Metadata.Find(x => x.Key == metadataKey);
+            existing.Key = editedMetadata.Key;
+            existing.Value = editedMetadata.Value;
+        }
+    }
+
+    private void RemoveMetadata(YarpMetadata metadata) => Metadata.Remove(metadata);
+
+    private string GetUniqueKey(string baseKey)
+    {
+        var index = Metadata.Count + 1;
+        var candidate = $"{baseKey}{index}";
+
+        while (Metadata.Any(x => string.Equals(x.Key, candidate, StringComparison.OrdinalIgnoreCase)))
+        {
+            index++;
+            candidate = $"{baseKey}{index}";
+        }
+
+        return candidate;
+    }
+}

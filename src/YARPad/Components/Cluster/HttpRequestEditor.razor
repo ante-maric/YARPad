@@ -1,0 +1,65 @@
+﻿@if (!IsEnabled)
+{
+    <MudAlert Severity="Severity.Warning" Dense="true" Class="mb-4">
+        This configuration section is disabled. Enable it to allow edits.
+    </MudAlert>
+}
+
+<MudStack Spacing="2">
+    <TopToolTip Text="@Tooltips.HttpRequest_ActivityTimeout">
+        <MudTextField T="TimeSpan ?" Label="ⓘ Activity Timeout"
+                      @bind-Value="HttpRequest.ActivityTimeout"
+                      For="@(() => Cluster.HttpRequest.ActivityTimeout)"                      
+                      Converter="@FieldConverters.TimeSpan"
+                      Variant="Variant.Outlined" Margin="Margin.Dense"
+                      Disabled="@(!IsEnabled)"/>
+    </TopToolTip>
+    <MudStack Row="true" Spacing="3">
+        <TopToolTip Text="@Tooltips.HttpRequest_VersionPolicy" RootClass="d-flex flex-auto">
+            <MudSelect T="HttpVersionPolicy ?" Label="ⓘ Version Policy"
+                       @bind-Value="HttpRequest.VersionPolicy"
+                       For="@(() => Cluster.HttpRequest.VersionPolicy)"
+                       Variant="Variant.Outlined" Clearable="true"
+                       Margin="Margin.Dense" Dense="true"
+                       Disabled="@(!IsEnabled)">
+                @foreach (var policy in Enum.GetValues<HttpVersionPolicy>().Select(x => (HttpVersionPolicy?)x))
+                {
+                    <MudSelectItem Value="@policy">
+                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                            <MudIcon Icon="@policy.ToIcon()" Class="@policy.ToColorClass()" />
+                            @policy?.HumanizeEnum()
+                        </MudStack>
+                    </MudSelectItem>
+                }
+            </MudSelect>
+        </TopToolTip>
+        <TopToolTip Text="@Tooltips.HttpRequest_Version" RootClass="d-flex flex-auto">
+            <MudTextField T="Version" Label="ⓘ Version"
+                          @bind-Value="HttpRequest.Version"
+                          For="@(() => Cluster.HttpRequest.Version)"
+                          Converter="@FieldConverters.Version"
+                          Variant="Variant.Outlined" Mask="@PatternMask.Version"
+                          Margin="Margin.Dense"
+                          Disabled="@(!IsEnabled)" />
+        </TopToolTip>
+    </MudStack>
+    <TopToolTip Text="@Tooltips.HttpRequest_AllowResponseBuffering">
+        <MudCheckBox Label="ⓘ Allow Response Buffering"
+                     @bind-Value="HttpRequest.AllowResponseBuffering"
+                     For="@(() => Cluster.HttpRequest.AllowResponseBuffering)"
+                     Dense="true"
+                     Disabled="@(!IsEnabled)" />
+    </TopToolTip>
+</MudStack>
+
+@code {
+
+    [CascadingParameter]
+    private ClusterModel Cluster { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public required ForwarderRequestModel HttpRequest { get; set; }
+
+    [Parameter, EditorRequired]
+    public bool IsEnabled { get; set; }
+}

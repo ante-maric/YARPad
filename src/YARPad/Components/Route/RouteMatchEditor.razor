@@ -1,0 +1,325 @@
+@using Yarp.ReverseProxy.Configuration
+@using Yarp.ReverseProxy.Forwarder
+
+@inject IDialogService DialogService
+
+<MudStack Spacing="2">
+    <TopToolTip Text="@Tooltips.Route_Match_Path">
+        <MudTextField Label="ⓘ Path" @bind-Value="Match.Path" For="@(() => Route.Match.Path)" Variant="Variant.Outlined" Margin="Margin.Dense" />
+    </TopToolTip>
+
+    <TopToolTip Text="@Tooltips.Route_Match_Methods">
+        <CustomInput T="List<string>" For="@(() => Route.Match.Methods)">
+            <MudField Label="ⓘ Methods" Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudChipSet T="string"
+                            SelectedValues="Match.Methods"
+                            SelectedValuesChanged="OnMethodsSelectionChanged"
+                            SelectionMode="SelectionMode.MultiSelection"
+                            CheckMark="true"
+                            @ref="_methodsChipSet">
+                    @foreach (var method in HttpMethod.All)
+                    {
+                        <MudChip Value="@method.ID"
+                                 Text="@method.Name"
+                                 Class="@ColorResolver.GetHttpMethodChipClasses(method.ID)"
+                                 Variant="Variant.Text"
+                                 Size="Size.Small"
+                                 Selected="@(Match.Methods.Contains(method.ID))" />
+                    }
+                </MudChipSet>
+            </MudField>
+        </CustomInput>
+    </TopToolTip>
+
+    <TopToolTip Text="@Tooltips.Route_Match_Hosts">
+        <CustomInput T="List<string>" For="@(() => Route.Match.Hosts)">
+            <MudField Label="ⓘ Hosts" Variant="Variant.Outlined" Margin="Margin.Dense">
+                @foreach (var host in Match.Hosts)
+                {
+                    <MudChip Value="@host"
+                             Text="@host"
+                             Color="@ColorResolver.Symbol.Host"
+                             Variant="Variant.Text"
+                             Size="Size.Small"
+                             Ripple="false"
+                             OnClose="@((MudChip<string> c) => Match.Hosts.Remove(c.Value!))" />
+                }
+            </MudField>
+        </CustomInput>
+    </TopToolTip>
+
+    <TopToolTip Text="@Tooltips.Route_Match_Hosts">
+        <MudTextField @bind-Value="_newHost"
+                      Label="ⓘ Add Host"
+                      Variant="Variant.Outlined"
+                      Adornment="Adornment.End"
+                      AdornmentIcon="@IconResolver.Buttons.AddSubtle"
+                      OnAdornmentClick="AddHost"
+                      OnKeyDown="OnNewHostKeyDown" Margin="Margin.Dense" />
+    </TopToolTip>
+
+
+    <MudCard Outlined="true">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <TopToolTip Text="@Tooltips.Route_Match_Headers">
+                    <MudText>ⓘ Headers</MudText>
+                </TopToolTip>
+            </CardHeaderContent>
+            <CardHeaderActions>
+                <MudIconButton Icon="@IconResolver.Buttons.Add" Color="@ColorResolver.Buttons.Add" OnClick="AddHeaderAsync" />
+            </CardHeaderActions>
+        </MudCardHeader>
+        <MudCardContent>
+            @if (Match.Headers.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Dense="true">No headers defined.</MudAlert>
+            }
+            else
+            {
+                <MudSimpleTable Class="overflow-x-auto" Bordered="true" Outlined="true" Dense="true">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Mode</th>
+                            <th>Case Sensitive</th>
+                            <th>Values</th>
+                            <th style="width:1%; white-space:nowrap; text-align:center;" />
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var header in Match.Headers)
+                        {
+                            <tr>
+                                <td>
+                                    <MudText>@header.Name</MudText>
+                                </td>
+                                <td>
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                                        <MudIcon Icon="@header.Mode.ToIcon()" Class="@header.Mode.ToColorClass()" />
+                                        <span>@header.Mode.HumanizeEnum()</span>
+                                    </MudStack>
+                                </td>
+                                <td>
+                                    <MudText>@(header.IsCaseSensitive ? "Yes" : "No")</MudText>
+                                </td>
+                                <td>
+                                    <MudStack Row="true" Spacing="1">
+                                        @if (header.Values.Count == 0)
+                                        {
+                                            <MudText Color="@ColorResolver.Symbol.HeaderValue">Any</MudText>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var value in header.Values)
+                                            {
+                                                <MudChip Value="@value"
+                                                         Color="@ColorResolver.Symbol.HeaderValue"
+                                                         Variant="Variant.Outlined"
+                                                         Size="Size.Small"
+                                                         Ripple="false" />
+                                            }
+                                        }
+                                    </MudStack>
+                                </td>
+                                <td>
+                                    <MudStack Row="true" Spacing="2" Justify="Justify.Center">
+                                        <MudIconButton Icon="@IconResolver.Buttons.Edit" Color="@ColorResolver.Buttons.Edit" Size="Size.Small" OnClick="@(() => EditHeaderAsync(header))" />
+                                        <MudIconButton Icon="@IconResolver.Buttons.Delete" Color="@ColorResolver.Buttons.Delete" Size="Size.Small" OnClick="@(() => RemoveHeader(header))" />
+                                    </MudStack>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            }
+        </MudCardContent>
+    </MudCard>
+
+    <MudCard Outlined="true">
+        <MudCardHeader>
+            <CardHeaderContent>
+                <TopToolTip Text="@Tooltips.Route_Match_QueryParameters">
+                    <MudText>ⓘ Query Parameters</MudText>
+                </TopToolTip>
+            </CardHeaderContent>
+            <CardHeaderActions>
+                <MudIconButton Icon="@IconResolver.Buttons.Add" Color="@ColorResolver.Buttons.Add" OnClick="AddQueryParameterAsync" />
+            </CardHeaderActions>
+        </MudCardHeader>
+        <MudCardContent>
+            @if (Match.QueryParameters.Count == 0)
+            {
+                <MudAlert Severity="Severity.Info" Dense="true">No query parameters defined.</MudAlert>
+            }
+            else
+            {
+                <MudSimpleTable Class="overflow-x-auto" Bordered="true" Outlined="true" Dense="true">
+                    <thead>
+                        <tr>
+                            <th>Name</th>
+                            <th>Mode</th>
+                            <th>Case Sensitive</th>
+                            <th>Values</th>
+                            <th style="width:1%; white-space:nowrap; text-align:center;" />
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach (var queryParam in Match.QueryParameters)
+                        {
+                            <tr>
+                                <td>
+                                    <MudText>@queryParam.Name</MudText>
+                                </td>
+                                <td>
+                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                                        <MudIcon Icon="@queryParam.Mode.ToIcon()" Class="@queryParam.Mode.ToColorClass()" />
+                                        <span>@queryParam.Mode.HumanizeEnum()</span>
+                                    </MudStack>
+                                </td>
+                                <td>
+                                    <MudText>@(queryParam.IsCaseSensitive ? "Yes" : "No")</MudText>
+                                </td>
+                                <td>
+                                    <MudStack Row="true" Spacing="2" Justify="Justify.Center">
+                                        @if (queryParam.Values.Count == 0)
+                                        {
+                                            <MudText Color="@ColorResolver.Symbol.HeaderValue">Any</MudText>
+                                        }
+                                        else
+                                        {
+                                            @foreach (var value in queryParam.Values)
+                                            {
+                                                <MudChip Value="@value"
+                                                         Color="@ColorResolver.Symbol.HeaderValue"
+                                                         Variant="Variant.Outlined"
+                                                         Size="Size.Small"
+                                                         Ripple="false" />
+                                            }
+                                        }
+                                    </MudStack>
+                                </td>
+                                <td>
+                                    <MudStack Row="true" Spacing="2">
+                                        <MudIconButton Icon="@IconResolver.Buttons.Edit" Color="@ColorResolver.Buttons.Edit" Size="Size.Small" OnClick="@(() => EditQueryParameterAsync(queryParam))" />
+                                        <MudIconButton Icon="@IconResolver.Buttons.Delete" Color="@ColorResolver.Buttons.Delete" Size="Size.Small" OnClick="@(() => RemoveQueryParameter(queryParam))" />
+                                    </MudStack>
+                                </td>
+                            </tr>
+                        }
+                    </tbody>
+                </MudSimpleTable>
+            }
+        </MudCardContent>
+    </MudCard>
+</MudStack>
+
+@code {
+    [CascadingParameter]
+    private RouteModel Route { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public required RouteMatchModel Match { get; set; }
+
+    private string _newHost = string.Empty;
+    private MudChipSet<string>? _methodsChipSet;
+
+    private void AddHost()
+    {
+        if (!string.IsNullOrWhiteSpace(_newHost) && !Match.Hosts.Contains(_newHost))
+        {
+            Match.Hosts.Add(_newHost);
+            _newHost = string.Empty;
+        }
+    }
+
+    private void OnNewHostKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            AddHost();
+        }
+    }
+
+    private void OnMethodsSelectionChanged(IReadOnlyCollection<string>? methods)
+    {
+        if (methods == null)
+            return;
+
+        Match.Methods = methods.ToList();
+    }
+
+    private async Task AddHeaderAsync() =>
+        await OpenHeaderDialogAsync(null, new RouteHeaderModel { Name = "NewHeader", Mode = HeaderMatchMode.ExactHeader, IsCaseSensitive = false });
+
+    private async Task EditHeaderAsync(RouteHeaderModel header) =>
+        await OpenHeaderDialogAsync(header, header with { Values = new(header.Values) });
+
+    private async Task OpenHeaderDialogAsync(RouteHeaderModel? originalHeader, RouteHeaderModel headerToEdit)
+    {
+        var parameters = new DialogParameters<RouteHeaderDialog>()
+        {
+            { x => x.Header, headerToEdit },
+        };
+
+        var dialog = await DialogService.ShowAsync<RouteHeaderDialog>(null, parameters);
+        var result = await dialog.Result;
+        if (result?.Canceled == true || result?.Data is not RouteHeaderModel editedHeader)
+            return;
+
+        if (originalHeader == null)
+        {
+            Match.Headers.Add(editedHeader);
+        }
+        else
+        {
+            var index = Match.Headers.IndexOf(originalHeader);
+            if (index >= 0)
+                Match.Headers[index] = editedHeader;
+            else
+                Match.Headers.Add(editedHeader);
+        }
+    }
+
+    private void RemoveHeader(RouteHeaderModel header)
+    {
+        Match.Headers.Remove(header);
+    }
+
+    private async Task AddQueryParameterAsync() =>
+        await OpenQueryParameterDialogAsync(null, new RouteQueryParameterModel { Name = "NewQueryParam", Mode = QueryParameterMatchMode.Exact, IsCaseSensitive = false });
+
+    private async Task EditQueryParameterAsync(RouteQueryParameterModel queryParam) =>
+        await OpenQueryParameterDialogAsync(queryParam, queryParam with { Values = new(queryParam.Values) });
+
+    private async Task OpenQueryParameterDialogAsync(RouteQueryParameterModel? originalQueryParameter, RouteQueryParameterModel queryParamToEdit)
+    {
+        var parameters = new DialogParameters<RouteQueryParameterDialog>()
+        {
+            { x => x.QueryParameter, queryParamToEdit },
+        };
+
+        var dialog = await DialogService.ShowAsync<RouteQueryParameterDialog>(null, parameters);
+        var result = await dialog.Result;
+        if (result?.Canceled == true || result?.Data is not RouteQueryParameterModel editedQueryParameter)
+            return;
+
+        if (originalQueryParameter == null)
+        {
+            Match.QueryParameters.Add(editedQueryParameter);
+        }
+        else
+        {
+            var index = Match.QueryParameters.IndexOf(originalQueryParameter);
+            if (index >= 0)
+                Match.QueryParameters[index] = editedQueryParameter;
+            else
+                Match.QueryParameters.Add(editedQueryParameter);
+        }
+    }
+
+    private void RemoveQueryParameter(RouteQueryParameterModel queryParam)
+    {
+        Match.QueryParameters.Remove(queryParam);
+    }
+}

@@ -1,0 +1,72 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Razor">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<Nullable>enable</Nullable>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<AddRazorSupportForMvc>true</AddRazorSupportForMvc>
+		<InvariantGlobalization>true</InvariantGlobalization>
+		<RootNamespace>CodingCell.YARPad</RootNamespace>
+		<Version>0.18.20</Version>
+		<PackageId>CodingCell.YARPad</PackageId>
+		<Authors>Ante Marić</Authors>
+		<Description>Blazor Server admin UI for YARP (Yet Another Reverse Proxy).</Description>
+		<PackageTags>yarp;reverse-proxy;blazor;blazor-server;aspnetcore;devtools</PackageTags>
+		<RepositoryUrl>https://github.com/ante-maric/YARPad</RepositoryUrl>
+		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
+		<PackageReadmeFile>README.md</PackageReadmeFile>
+		<PackageIcon>icon.png</PackageIcon>
+    <PackageProjectUrl>https://github.com/ante-maric/YARPad</PackageProjectUrl>
+    <GenerateDocumentationFile>true</GenerateDocumentationFile>
+    <PublishRepositoryUrl>true</PublishRepositoryUrl>
+    <EmbedUntrackedSources>true</EmbedUntrackedSources>
+    <IncludeSymbols>true</IncludeSymbols>
+    <SymbolPackageFormat>snupkg</SymbolPackageFormat>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<Content Remove="wwwroot\apple-touch-icon.png" />
+		<None Include="wwwroot\apple-touch-icon.png" Pack="true" PackagePath="icon.png" />
+    <None Include="..\..\docs\nuget-readme.md" Pack="true" PackagePath="README.md" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<FrameworkReference Include="Microsoft.AspNetCore.App" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<PackageReference Include="AutoMapper" Version="[14.0.0]">
+			<NoWarn>NU1903;GHSA-rvv3-g6hj-g44x</NoWarn>
+		</PackageReference>
+		<PackageReference Include="FluentValidation" Version="12.1.1" />
+		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
+		<PackageReference Include="Humanizer.Core" Version="3.0.10" />
+		<PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.8" />
+		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.8" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.8" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.8">
+		  <PrivateAssets>all</PrivateAssets>
+		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
+		</PackageReference>
+		<PackageReference Include="MudBlazor" Version="9.5.0" />
+		<PackageReference Include="Net.Codecrete.QrCodeGenerator" Version="3.0.0" />
+		<PackageReference Include="System.Reactive" Version="6.1.0" />
+		<PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
+	</ItemGroup>
+
+	<ItemGroup>
+		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+			<_Parameter1>YARPad.Tests</_Parameter1>
+		</AssemblyAttribute>
+		<AssemblyAttribute Include="System.Runtime.CompilerServices.InternalsVisibleTo">
+			<_Parameter1>DynamicProxyGenAssembly2, PublicKey=0024000004800000940000000602000000240000525341310004000001000100c547cac37abd99c8db225ef2f6c8a3602f3b3606cc9891605d02baa56104f4cfc0734aa39b93bf7852f7d9266654753cc297e7d2edfe0bac1cdcf9f717241550e0a7b191195b7667bb4f64bcb8e2121380fd1d9d46ad2d92d2d15605093924cceaf74c4861eff62abf69b9291ed0a340e113be11e6a7d3113e92484cf7045cc7</_Parameter1>
+		</AssemblyAttribute>
+	</ItemGroup>
+
+	<ItemGroup>
+		<EmbeddedResource Include="Components\Account\EmailTemplates\*.html" />
+		<EmbeddedResource Include="wwwroot\YarpadIcon.png" />
+		<EmbeddedResource Include="wwwroot\YarpadText.png" />
+	</ItemGroup>
+  
+</Project>

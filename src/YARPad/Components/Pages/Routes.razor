@@ -1,0 +1,87 @@
+﻿@page "/"
+@page "/routes"
+
+@attribute [Authorize]
+@inherits StateComponentBase<CurrentConfigurationProfileState>
+
+@inject IYARPadConfigurationProvider ConfigurationProvider
+@inject IRouteEditorService RouteEditorService
+
+<div style="max-width:900px;">
+    <MudStack Spacing="3">
+        <MudStack Row="true" AlignItems="AlignItems.Center">
+            <MudIcon Icon="@IconResolver.Symbol.Route" Color="Color.Primary" Size="Size.Large" />
+            <MudStack Spacing="0">
+                <MudText Typo="Typo.h4">Routes</MudText>
+                <MudText Typo="Typo.caption">Named routes that direct incoming requests to clusters</MudText>
+            </MudStack>
+        </MudStack>
+
+        @if (State.SelectedProfile == null || State.SelectedProfile.Configuration.Routes.Count == 0)
+        {
+            <MudPaper Class="pa-4" Outlined="true">
+                <MudText Typo="Typo.body2">No routes defined.</MudText>
+            </MudPaper>
+        }
+        else
+        {
+            @foreach (var route in State.SelectedProfile.Configuration.Routes)
+            {
+                <RouteCard Route="route"
+                           Cluster="@(State.SelectedProfile.Configuration.Clusters.FirstOrDefault(x => x.ClusterID == route.ClusterID))"
+                           ConfigurationProfileID="State.SelectedProfile.ID"
+                           OnEdit="EditRouteAsync"
+                           OnClone="CloneRouteAsync"
+                           OnDelete="DeleteRouteAsync"
+                           OnToggled="ToggleRouteAsync" />
+            }
+        }
+    </MudStack>
+</div>
+
+<MudFab Color="@ColorResolver.Buttons.AddSubtle" StartIcon="@IconResolver.Buttons.AddSubtle" Class="ma-4 fixed" Style="bottom: 0; right: 0;" OnClick="AddRoute" />
+
+@code {
+    private async Task AddRoute()
+    {
+        if (State.SelectedProfile == null)
+            return;
+
+        await RouteEditorService.OpenAsync(State.SelectedProfile.ID, new RouteModel() { RouteID = "" });
+    }
+
+    private async Task EditRouteAsync(RouteModel route)
+    {
+        if (State.SelectedProfile == null)
+            return;
+
+        await RouteEditorService.OpenAsync(State.SelectedProfile.ID, route.DeepClone(), route.RouteID);
+    }
+
+    private async Task CloneRouteAsync(RouteModel route)
+    {
+        if (State.SelectedProfile == null)
+            return;
+
+        var clonedRoute = route.DeepClone();
+        clonedRoute.RouteID += " Cloned";
+
+        await RouteEditorService.OpenAsync(State.SelectedProfile.ID, clonedRoute);
+    }
+
+    private async Task DeleteRouteAsync(RouteModel route)
+    {
+        if (State.SelectedProfile == null)
+            return;
+
+        await ConfigurationProvider.DeleteRouteAsync(State.SelectedProfile.ID, State.SelectedProfile.Configuration, route);
+    }
+
+    private async Task ToggleRouteAsync((RouteModel Route, bool IsEnabled) args)
+    {
+        if (State.SelectedProfile == null)
+            return;
+
+        await ConfigurationProvider.ToggleRouteAsync(State.SelectedProfile.ID, State.SelectedProfile.Configuration, args.Route.RouteID, args.IsEnabled);
+    }
+}

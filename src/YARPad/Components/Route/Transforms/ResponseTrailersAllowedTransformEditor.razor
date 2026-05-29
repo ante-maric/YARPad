@@ -1,0 +1,54 @@
+<MudStack Spacing="2">
+    <TopToolTip Text="@Tooltips.Transforms_ResponseTrailersAllowed_Field">
+        <CustomInput T="List<string>" For="@(() => Transform.AllowedTrailers)">
+            <MudField Label="ⓘ Allowed Trailers" Variant="Variant.Outlined" Margin="Margin.Dense">
+                <MudChipSet T="string">
+                    @foreach (var value in Transform.AllowedTrailers)
+                    {
+                        <MudChip Value="@value"
+                                 Text="@value"
+                                 Color="@ColorResolver.Symbol.HeaderValue"
+                                 Variant="Variant.Text"
+                                 Size="Size.Small"
+                                 OnClose="@((MudChip<string> c) => Transform.AllowedTrailers.Remove(c.Value!))" />
+                    }
+                </MudChipSet>
+            </MudField>
+        </CustomInput>
+    </TopToolTip>
+
+    <MudTextField Label="Add Trailer"
+                  @bind-Value="_newValue"
+                  Variant="Variant.Outlined"
+                  Margin="Margin.Dense"
+                  Adornment="Adornment.End"
+                  AdornmentIcon="@IconResolver.Buttons.AddSubtle"
+                  Mask="@_headerCookieNameMask"
+                  OnAdornmentClick="AddValue"
+                  OnKeyDown="OnNewValueKeyDown" />
+</MudStack>
+
+@code {
+    private string _newValue = string.Empty;
+    private RegexMask _headerCookieNameMask = new RegexMask(RegexPatterns.HEADER_COOKIE_NAME);
+
+    [Parameter, EditorRequired]
+    public required ResponseTrailersAllowedTransform Transform { get; set; }
+
+    private void AddValue()
+    {
+        if (!string.IsNullOrWhiteSpace(_newValue) && !Transform.AllowedTrailers.Contains(_newValue))
+        {
+            Transform.AllowedTrailers.Add(_newValue);
+            _newValue = string.Empty;
+        }
+    }
+
+    private void OnNewValueKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            AddValue();
+        }
+    }
+}

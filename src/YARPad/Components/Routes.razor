@@ -1,0 +1,15 @@
+﻿@using CodingCell.YARPad.Components.Account.Shared
+@inject RazorAssemblyRegistry AssemblyRegistry
+
+<Router AppAssembly="typeof(App).Assembly" AdditionalAssemblies="AssemblyRegistry.Assemblies" NotFoundPage="typeof(Pages.NotFound)">
+    <Found Context="routeData">
+        <CascadingValue Value="routeData">
+            <AuthorizeRouteView RouteData="routeData" DefaultLayout="typeof(Layout.MainLayout)">
+                <NotAuthorized>
+                    <RedirectToLogin />
+                </NotAuthorized>
+            </AuthorizeRouteView>
+            <FocusOnNavigate RouteData="routeData" Selector="h1" />
+        </CascadingValue>
+    </Found>
+</Router>

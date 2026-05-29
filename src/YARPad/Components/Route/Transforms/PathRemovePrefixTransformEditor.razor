@@ -1,0 +1,12 @@
+<TopToolTip Text="@Tooltips.Transforms_PathRemovePrefix_Field">
+    <MudTextField Label="ⓘ Remove Path Prefix"
+                  @bind-Value="Transform.PathRemovePrefix"
+                  For="@(() => Transform.PathRemovePrefix)"
+                  Variant="Variant.Outlined"
+                  Margin="Margin.Dense" />
+</TopToolTip>
+
+@code {
+    [Parameter, EditorRequired]
+    public required PathRemovePrefixTransform Transform { get; set; }
+}

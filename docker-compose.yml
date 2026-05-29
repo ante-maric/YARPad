@@ -1,0 +1,141 @@
+services:
+  yarpad-init:
+    image: busybox:1.36
+    # Ensures the persistent volume is owned by the non-root user (UID/GID 1654)
+    # that the yarpad container runs as, with restricted permissions.
+    command: sh -c "chown -R 1654:1654 /data && chmod 750 /data"
+    volumes:
+      - yarpad_data:/data
+    restart: "no"
+
+  yarpad:
+    image: onedev.cscell.eu/amaric/packages/yarpad-proxy:0.16.0
+    restart: unless-stopped
+    depends_on:
+      yarpad-init:
+        condition: service_completed_successfully
+    volumes:
+      - yarpad_data:/data
+    ports:
+      # HTTP – also serves the ACME HTTP-01 challenge when Let's Encrypt is enabled.
+      # Change the left side to use a different host port.
+      - 80:8080
+      # HTTPS – required when Let's Encrypt is enabled (automatic TLS via LettuceEncrypt).
+      # Uncomment and expose this port before enabling IsLetsEncryptEnabled.
+      #- 443:8081
+    environment:
+      # --- Database ---
+
+      # SQLite connection string. The file path must reside inside the persistent volume (/data).
+      - YARPad__ConnectionString=DataSource=/data/yarpad.db
+
+      # --- General ---
+
+      # Base path under which the YARPad UI is served.
+      # Default: /yarpad
+      #- YARPad__PathPrefix=/yarpad
+
+      # Human-readable identifier for this YARP instance shown in the UI.
+      # Defaults to the container hostname (machine name) when not set.
+      #- YARPad__InstanceID=my-gateway
+
+      # --- Multi-user mode ---
+
+      # Set to true to enable multi-user support (login/register).
+      # When false, user registration is closed once first user registers.
+      # Default: false
+      #- YARPad__MultiUserEnabled=false
+
+      # --- LAN-only access restriction ---
+
+      # Set to true to disable the LAN-only restriction and allow access from any network.
+      # Default: false (LAN-only restriction is active)
+      #- YARPad__IsLanOnlyAccessDisabled=false
+
+      # When true, the default private IPv4 ranges (10.0.0.0/8, 172.16.0.0/12,
+      # 192.168.0.0/16) and IPv6 ULA (fc00::/7) / link-local (fe80::/10) are allowed.
+      # Default: true
+      #- YARPad__LanAccess__IncludeDefaultPrivateRanges=true
+
+      # When true, loopback addresses (127.0.0.1, ::1) are allowed.
+      # Default: true
+      #- YARPad__LanAccess__AllowLoopback=true
+
+      # Additional CIDR ranges to allow beyond the default private ranges.
+      # Useful for non-standard LAN subnets or public IPv6 prefixes used on your LAN.
+      # Provide as a JSON array.
+      # Example: ["2a02:1234::/48", "203.0.113.0/24"]
+      #- YARPad__LanAccess__AdditionalAllowedRanges__0=203.0.113.0/24
+
+      # --- Reverse-proxy / forwarded headers ---
+
+      # Trusted proxy IP addresses whose X-Forwarded-For headers will be accepted.
+      # Required when yarpad sits behind another reverse proxy (e.g. nginx, Traefik).
+      # Example: ["10.0.0.1"]
+      #- YARPad__LanAccess__TrustedProxies__0=10.0.0.1
+
+      # Trusted proxy networks in CIDR notation.
+      # Use instead of (or in addition to) individual TrustedProxies entries.
+      # Example: ["10.0.0.0/8"]
+      #- YARPad__LanAccess__TrustedNetworks__0=10.0.0.0/8
+
+      # Maximum number of entries to read from the X-Forwarded-For header.
+      # Prevents header-spoofing attacks. Set to the number of reverse proxies in the chain.
+      # Default: 1
+      #- YARPad__LanAccess__ForwardLimit=1
+
+      # --- Let's Encrypt (automatic HTTPS via lego) ---
+
+      # Set to true to enable automatic certificate issuance and renewal via Let's Encrypt.
+      # Also uncomment the 443:8081 port mapping above.
+      # Default: false
+      #- YARPadProxy__IsLetsEncryptEnabled=false
+
+      # Directory inside the container where certificate data is persisted.
+      # Must reside inside the persistent volume so certs survive container restarts.
+      # Default: LetsEncrypt (relative to RootDataPath)
+      #- YARPadProxy__LetsEncrypt__DataPath=/data/letsencrypt
+
+      # Use the Let's Encrypt staging CA instead of production.
+      # Enable during testing to avoid rate limits; disable for production.
+      # Default: false
+      #- YARPadProxy__LetsEncrypt__UseStagingServer=false
+
+      # Override the staging server URL (optional).
+      #- YARPadProxy__LetsEncrypt__StagingServerUrl=https://acme-staging-v02.api.letsencrypt.org/directory
+
+      # --- Certificate definitions ---
+      # Each certificate is identified by a unique name (e.g. "mycert").
+      # Multiple certificates can be defined by repeating the block with a different name.
+
+      # Contact email registered with Let's Encrypt.
+      #- YARPadProxy__LetsEncrypt__Certificates__mycert__Email=admin@example.com
+
+      # ACME challenge type: Http01 or Dns01.
+      # Http01 requires port 80 to be publicly reachable.
+      # Dns01 requires a supported DNS provider (see DnsProvider below).
+      # Default: Dns01
+      #- YARPadProxy__LetsEncrypt__Certificates__mycert__AcmeChallengeType=Http01
+
+      # DNS provider name (required for Dns01 challenge).
+      # See https://go-acme.github.io/lego/dns for the full list of supported providers.
+      #- YARPadProxy__LetsEncrypt__Certificates__mycert__DnsProvider=cloudflare
+
+      # Domain(s) covered by this certificate.
+      # Add one entry per domain, incrementing the index.
+      #- YARPadProxy__LetsEncrypt__Certificates__mycert__Domains__0=your-domain.example.com
+      #- YARPadProxy__LetsEncrypt__Certificates__mycert__Domains__1=www.your-domain.example.com
+
+      # Provider-specific environment variables (e.g. API tokens).
+      # Consult https://go-acme.github.io/lego/dns/<provider> for required variables.
+      #- YARPadProxy__LetsEncrypt__Certificates__mycert__EnvironmentVariables__CF_DNS_API_TOKEN=your-token
+
+      # --- Logging ---
+
+      # Minimum log level written to the console.
+      # Values: Verbose, Debug, Information, Warning, Error, Fatal
+      # Default: Information
+      #- Serilog__MinimumLevel__Default=Information
+
+volumes:
+  yarpad_data:

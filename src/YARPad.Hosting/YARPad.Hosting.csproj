@@ -1,0 +1,33 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+	<PropertyGroup>
+		<TargetFramework>net10.0</TargetFramework>
+		<ImplicitUsings>enable</ImplicitUsings>
+		<Nullable>enable</Nullable>
+		<RootNamespace>CodingCell.YARPad.Hosting</RootNamespace>
+	</PropertyGroup>
+
+	<ItemGroup>
+		<PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
+		<PackageReference Include="Serilog.Extensions.Hosting" Version="10.0.0" />
+		<PackageReference Include="Serilog.Settings.Configuration" Version="10.0.0" />
+	</ItemGroup>
+
+	<Target Name="SelectLegoBinary" BeforeTargets="AssignTargetPaths">
+		<ItemGroup Condition="'$(LegoTargetOS)' == 'windows'">
+			<Content Include="tools\lego.exe">
+				<TargetPath>tools\lego.exe</TargetPath>
+				<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+				<CopyToPublishDirectory>Always</CopyToPublishDirectory>
+			</Content>
+		</ItemGroup>
+
+		<ItemGroup Condition="'$(LegoTargetOS)' == 'linux' Or '$(LegoTargetOS)' == 'osx' Or '$(LegoTargetOS)' == 'unix'">
+			<Content Include="tools\lego">
+				<TargetPath>tools\lego</TargetPath>
+				<CopyToOutputDirectory>Always</CopyToOutputDirectory>
+				<CopyToPublishDirectory>Always</CopyToPublishDirectory>
+			</Content>
+		</ItemGroup>
+	</Target>
+</Project>

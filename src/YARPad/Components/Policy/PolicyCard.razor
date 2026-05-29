@@ -1,0 +1,128 @@
+@inject IDialogService DialogService
+@inject IClusterEditorService ClusterEditorService
+@inject IRouteEditorService RouteEditorService
+
+<MudCard Elevation="3" Class="border-t-2 mud-border-primary">
+    <MudCardHeader>
+        <CardHeaderContent>
+            <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="2">
+                @if(Policy.IsBuiltIn)
+                {
+                    <MudIcon Icon="@IconResolver.Symbol.Locked" Color="@ColorResolver.Symbol.Locked" Size="Size.Small"/>
+                }
+                <MudText Typo="Typo.h6">@Policy.ID</MudText>
+            </MudStack>
+        </CardHeaderContent>
+        <CardHeaderActions>
+            <MudStack Row="true" Spacing="0">
+                @if(!Policy.IsBuiltIn)
+                {
+                    <MudIconButton Icon="@IconResolver.Buttons.Edit" OnClick="EditAsync" Disabled="@Policy.IsBuiltIn" />                    
+                }
+                <MudMenu Icon="@IconResolver.Buttons.More">
+                    <MudMenuItem Icon="@IconResolver.Buttons.Clone" OnClick="CloneAsync">Clone</MudMenuItem>
+                    @if(!Policy.IsBuiltIn)
+                    {
+                        <MudMenuItem Icon="@IconResolver.Buttons.Delete" OnClick="DeleteAsync" Disabled="@Policy.IsBuiltIn">Delete</MudMenuItem>                        
+                    }
+                </MudMenu>
+            </MudStack>
+        </CardHeaderActions>
+    </MudCardHeader>
+    <MudCardContent Class="pb-0">
+        <MudGrid Class="mb-4">
+            <MudItem xs="6">
+                <MudText Typo="Typo.body2">@(string.IsNullOrEmpty(Policy.Description) ? "No description" : Policy.Description)</MudText>
+            </MudItem>
+            <MudItem xs="6">
+                <DataField Name="Used By" HasData="@(UsedBy.Count > 0)">
+                    <MudStack Spacing="0">
+                        @if (UsedBy.Count > 0)
+                        {
+                            var visibleCount = UsedBy.Count > 4 ? 3 : UsedBy.Count;
+                            @for (int i = 0; i < visibleCount; i++)
+                            {
+                                var routeID = UsedBy[i];
+                                <MudLink OnClick="@(() => OpenRelatedEntityEditorAsync(routeID))">@routeID</MudLink>
+                            }
+
+                            @if (UsedBy.Count > 4)
+                            {
+                                <MudLink OnClick="@ShowAllUsedByAsync">@($"+{UsedBy.Count - 3} more")</MudLink>
+                            }
+                        }
+                    </MudStack>
+                </DataField>
+            </MudItem>
+        </MudGrid>
+    </MudCardContent>
+</MudCard>
+
+@code {
+    [Parameter, EditorRequired]
+    public required PolicyInfo Policy { get; set; }
+
+    [Parameter, EditorRequired]
+    public required PolicyType PolicyType { get; set; }
+
+    [Parameter, EditorRequired]
+    public required List<string> UsedBy { get; set; }
+
+    [Parameter, EditorRequired]
+    public required Guid ConfigurationProfileID { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<PolicyInfo> OnEdit { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<PolicyInfo> OnClone { get; set; }
+
+    [Parameter, EditorRequired]
+    public EventCallback<PolicyInfo> OnDelete { get; set; }
+
+    private async Task EditAsync() => await OnEdit.InvokeAsync(Policy);
+
+    private async Task CloneAsync() => await OnClone.InvokeAsync(Policy);
+
+    private async Task DeleteAsync()
+    {
+        if (UsedBy.Count > 0)
+        {
+            var options = new DialogOptions { CloseOnEscapeKey = true, CloseButton = true };
+            await DialogService.ShowMessageBoxAsync(
+                "Cannot Delete " + Policy.ID,
+                $"This policy is referenced by {UsedBy.Count} entity(ies) and cannot be deleted. Remove the references first.",
+                "OK",
+                options: options);
+            return;
+        }
+
+        var confirmOptions = new DialogOptions { CloseOnEscapeKey = true, CloseButton = false };
+        var result = await DialogService.ShowMessageBoxAsync("Delete " + Policy.ID, $"Are you sure you want to delete this {PolicyType} policy?", "Yes", "No", options: confirmOptions);
+
+        if (result == true)
+            await OnDelete.InvokeAsync(Policy);
+    }
+
+    private async Task OpenRelatedEntityEditorAsync(string entityID)
+    {
+        await (PolicyType.GetContext() switch
+        {
+            PolicyContext.Route => RouteEditorService.OpenAsync(ConfigurationProfileID, entityID, true).ContinueWith(t => (object?)t.Result),
+            PolicyContext.Cluster => ClusterEditorService.OpenAsync(ConfigurationProfileID, entityID, true).ContinueWith(t => (object?)t.Result),
+            _ => Task.FromResult<object?>(null)
+        });
+    }
+
+    private async Task ShowAllUsedByAsync()
+    {
+        var parameters = new DialogParameters<RelationshipLinksDialog>
+        {
+            { x => x.Links, UsedBy },
+            { x => x.OnLinkClick, EventCallback.Factory.Create<string>(this, OpenRelatedEntityEditorAsync) }
+        };
+        var options = new DialogOptions { CloseOnEscapeKey = true, CloseButton = true, MaxWidth = MaxWidth.Small, FullWidth = true };
+
+        await DialogService.ShowAsync<RelationshipLinksDialog>("Used By", parameters, options);
+    }
+}

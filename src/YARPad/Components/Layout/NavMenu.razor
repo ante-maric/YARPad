@@ -1,0 +1,15 @@
+﻿@inject IEnumerable<INavMenuContributor> NavMenuContributors
+
+<MudNavMenu Class="mud-width-full flex-grow-1 overflow-y-auto" Color="Color.Primary">
+    <AuthorizeView>
+        <Authorized>
+            @foreach (var contributor in NavMenuContributors.OrderBy(c => c.Order))
+            {
+                <DynamicComponent Type="@contributor.NavSectionComponentType" />
+            }
+        </Authorized>
+        <NotAuthorized>
+            <MudNavLink Href="Account/Login" Match="NavLinkMatch.Prefix" Icon="@IconResolver.Symbol.User">Login</MudNavLink>
+        </NotAuthorized>
+    </AuthorizeView>
+</MudNavMenu>

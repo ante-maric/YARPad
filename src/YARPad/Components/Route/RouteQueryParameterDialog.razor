@@ -1,0 +1,130 @@
+@using Yarp.ReverseProxy.Configuration
+
+@inject RouteQueryParameterValidator Validator
+
+<MudDialog Class="border mud-border-primary-darken">
+    <TitleContent>
+        <MudText Typo="Typo.h6">Query Parameter Editor</MudText>
+    </TitleContent>
+
+    <DialogContent>
+        <MudForm @ref="_form" Model="@QueryParameter" Validation="@_validationHandler.ValidateAsync">
+            <MudStack Spacing="2">
+                <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
+                    <TopToolTip Text="@Tooltips.Route_QueryParameter_Name">
+                        <MudTextField Label="ⓘ Name"
+                                      @bind-Value="QueryParameter.Name"
+                                      For="@(() => QueryParameter.Name)"
+                                      Variant="Variant.Outlined"
+                                      Margin="Margin.Dense" />
+                    </TopToolTip>
+                    <TopToolTip Text="@Tooltips.Route_QueryParameter_IsCaseSensitive">
+                        <MudSwitch T="bool" @bind-Value="QueryParameter.IsCaseSensitive" Label="ⓘ Case Sensitive" Color="@ColorResolver.Buttons.Switch" Class="flex-basis-0" />
+                    </TopToolTip>
+                </MudStack>
+
+                <TopToolTip Text="@Tooltips.Route_QueryParameter_Mode">
+                    <MudSelect Label="ⓘ Mode"
+                               @bind-Value="QueryParameter.Mode"
+                               For="@(() => QueryParameter.Mode)"
+                               Variant="Variant.Outlined"
+                               Margin="Margin.Dense"
+                               HelperText="@QueryParameter.Mode.ToHelpText()">
+                        @foreach (QueryParameterMatchMode mode in Enum.GetValues(typeof(QueryParameterMatchMode)))
+                        {
+                            <MudSelectItem Value="@mode">
+                                <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                                    <MudIcon Icon="@mode.ToIcon()" Class="@mode.ToColorClass()" />
+                                    <span>@mode.HumanizeEnum()</span>
+                                </MudStack>
+                            </MudSelectItem>
+                        }
+                    </MudSelect>
+                </TopToolTip>
+
+                <TopToolTip Text="@Tooltips.Route_QueryParameter_Values">
+                    <CustomInput T="List<string>" For="@(() => QueryParameter.Values)">
+                        <MudField Label="ⓘ Values" Variant="Variant.Outlined" Margin="Margin.Dense">
+                            <MudChipSet T="string">
+                                @foreach (var value in QueryParameter.Values)
+                                {
+                                    <MudChip Value="@value"
+                                             Text="@value"
+                                             Color="@ColorResolver.Symbol.HeaderValue"
+                                             Variant="Variant.Text"
+                                             Size="Size.Small"
+                                             OnClose="@((MudChip<string> c) => QueryParameter.Values.Remove(c.Value!))" />
+                                }
+                            </MudChipSet>
+                        </MudField>
+                    </CustomInput>
+                </TopToolTip>
+
+                <MudTextField Label="Add Value"
+                              @bind-Value="_newValue"
+                              Variant="Variant.Outlined"
+                              Margin="Margin.Dense"
+                              Adornment="Adornment.End"
+                              AdornmentIcon="@IconResolver.Buttons.AddSubtle"
+                              OnAdornmentClick="AddValue"
+                              OnKeyDown="OnNewValueKeyDown" />
+            </MudStack>
+        </MudForm>
+    </DialogContent>
+
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="@ColorResolver.Buttons.Save" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private MudForm? _form;
+    private string _newValue = string.Empty;
+    private DeferredValidationHandler<RouteQueryParameterModel>? _validationHandler;
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public required RouteQueryParameterModel QueryParameter { get; set; }
+
+    private void AddValue()
+    {
+        if (!string.IsNullOrWhiteSpace(_newValue) && !QueryParameter.Values.Contains(_newValue))
+        {
+            QueryParameter.Values.Add(_newValue);
+            _newValue = string.Empty;
+        }
+    }
+
+    private void OnNewValueKeyDown(KeyboardEventArgs e)
+    {
+        if (e.Key == "Enter")
+        {
+            AddValue();
+        }
+    }
+
+    private async Task Save()
+    {
+        if (_validationHandler == null || _form == null)
+            return;
+
+        await _validationHandler.ExecuteValidationAsync(() => _form.ValidateAsync());
+
+        if (!_form.IsValid)
+            return;
+
+        MudDialog.Close(DialogResult.Ok(QueryParameter));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        _validationHandler = new(Validator);
+    }
+}

@@ -1,0 +1,352 @@
+@using System.Security.Authentication
+@using AutoMapper
+@using Yarp.ReverseProxy.Configuration
+@using Yarp.ReverseProxy.Transforms.Builder
+@using CodingCell.YARPad.Components.Common
+
+@inherits StateComponentBase<CurrentConfigurationProfileState>
+
+@inject RouteValidator Validator
+@inject IUnifiedPolicyProvider PolicyProvider
+@inject IYARPadConfigurationProvider ConfigurationProvider
+@inject IConfigValidator ConfigValidator
+@inject IMapper Mapper
+@inject IDialogService DialogService
+@inject IClusterEditorService ClusterEditorService
+
+<MudDialog Style="height: calc(100% - 64px);" Class="sticky-header-dialog border mud-border-primary-darken">
+
+    <TitleContent>
+        <MudText Typo="Typo.h6">Route Editor</MudText>
+    </TitleContent>
+
+    <DialogContent>
+
+        <div class="flex-none">
+            <MudForm @ref="_mainForm"
+                     Model="@Route"
+                     Validation="@_validationHandler.ValidateAsync">
+                <MudStack Spacing="2" Class="mb-2">
+                    <MudStack Row="true" Spacing="2" StretchItems="StretchItems.All">
+                        <MudTextField Label="Identifier"
+                                      @bind-Value="Route.RouteID"
+                                      For="@(() => Route.RouteID)"
+                                      Variant="Variant.Outlined"
+                                      Class="flex-basis-0" />
+
+                        <TopToolTip Text="@Tooltips.Route_InsertBefore"
+                                    RootClass="flex-basis-0">
+                            <MudSelect Label="ⓘ Insert before"
+                                       @bind-Value="_beforeRouteID"
+                                       Variant="Variant.Outlined"
+                                       Clearable="true">
+                                @foreach (var route in ConfigurationProfile.Configuration.Routes.Where(r => r.RouteID != RouteID))
+                                {
+                                    <MudSelectItem Value="@route.RouteID">@route.RouteID</MudSelectItem>
+                                }
+                            </MudSelect>
+                        </TopToolTip>
+                    </MudStack>
+
+                    <TopToolTip Text="@Tooltips.Route_EnableConfigurationSections">
+                        <MudField Label="ⓘ Enable Configuration Sections"
+                                  Variant="Variant.Outlined"
+                                  Margin="Margin.Dense">
+                            <MudStack Row="true" Spacing="4" Class="d-flex flex-grow-1 flex-wrap justify-center ma-2">
+                                @foreach (var configSection in Route.OptionalSectionSwitches)
+                                {
+                                    <MudSwitch T="bool"
+                                               Label="@configSection.Section.HumanizeEnum()"
+                                               @bind-Value="@configSection.IsEnabled"
+                                               Size="Size.Small"
+                                               ThumbIcon="@IconResolver.GetSwitchThumbIcon(configSection.IsEnabled)"
+                                               ThumbIconColor="@ColorResolver.GetSwitchThumbIconColor(configSection.IsEnabled)" />
+                                }
+                            </MudStack>
+                        </MudField>
+                    </TopToolTip>
+                </MudStack>
+            </MudForm>
+        </div>
+
+        <div class="d-flex flex-auto flex-column" style="min-height:0;">
+            <CascadingValue Value="@Route">
+                <MudTabs Outlined="true"
+                         Elevation="1"
+                         ApplyEffectsToContainer="true"
+                         KeepPanelsAlive="true"
+                         PanelClass="pa-2">
+                    <ChildContent>
+                        <MudTabPanel Text="ⓘ General"
+                                     BadgeDot="@(_generalForm?.IsValid == false)"
+                                     BadgeColor="@ColorResolver.Symbol.BadgeError">
+                            <TabWrapperContent>
+                                <TopToolTip Text="@Tooltips.Route_General">
+                                    @context
+                                </TopToolTip>
+                            </TabWrapperContent>
+                            <ChildContent>
+                                <div class="overflow-auto pa-2">
+                                    <MudForm @ref="_generalForm"
+                                             Model="@Route"
+                                             Validation="@_validationHandler.ValidateAsync">
+                                        <RouteGeneralEditor Route="@Route"
+                                                            Clusters="@_clusters"
+                                                            AuthorizationPolicies="@_authorizationPolicies"
+                                                            RateLimiterPolicies="@_rateLimiterPolicies"
+                                                            OutputCachePolicies="@_outputCachePolicies"
+                                                            TimeoutPolicies="@_timeoutPolicies"
+                                                            CorsPolicies="@_corsPolicies"
+                                                            OnEditCluster="OnEditClusterAsync"
+                                                            OnCreateCluster="OnCreateClusterAsync"
+                                                            OnCloneCluster="OnCloneClusterAsync"/>
+                                    </MudForm>
+                                </div>
+                            </ChildContent>
+                        </MudTabPanel>
+                        <MudTabPanel Text="ⓘ Match"
+                                     BadgeDot="@(_matchForm?.IsValid == false)"
+                                     BadgeColor="@ColorResolver.Symbol.BadgeError">
+                            <TabWrapperContent>
+                                <TopToolTip Text="@Tooltips.Route_Match">
+                                    @context
+                                </TopToolTip>
+                            </TabWrapperContent>
+                            <ChildContent>
+                                <div class="overflow-auto pa-2">
+                                    <MudForm @ref="_matchForm"
+                                             Model="@Route"
+                                             Validation="@_validationHandler.ValidateAsync">
+                                        <RouteMatchEditor Match="@Route.Match" />
+                                    </MudForm>
+                                </div>
+                            </ChildContent>
+                        </MudTabPanel>
+                        <MudTabPanel Text="ⓘ Transforms"
+                                     BadgeDot="@(_transformForm?.IsValid == false)"
+                                     BadgeColor="@ColorResolver.Symbol.BadgeError">
+                            <TabWrapperContent>
+                                <TopToolTip Text="@Tooltips.Route_Transform">
+                                    @context
+                                </TopToolTip>
+                            </TabWrapperContent>
+                            <ChildContent>
+                                <div class="overflow-auto pa-2">
+                                    <MudForm @ref="_transformForm"
+                                             Model="@Route"
+                                             Validation="@_validationHandler.ValidateAsync">
+                                        <RouteTransformsEditor Route="@Route" CustomTransforms="@_customTransforms" IsEnabled="@IsSectionEnabled(RouteConfigSection.Transform)" />
+                                    </MudForm>
+                                </div>
+                            </ChildContent>
+                        </MudTabPanel>
+                        <MudTabPanel Text="ⓘ Metadata"
+                                     BadgeDot="@(_metadataForm?.IsValid == false)"
+                                     BadgeColor="@ColorResolver.Symbol.BadgeError">
+                            <TabWrapperContent>
+                                <TopToolTip Text="@Tooltips.Route_Metadata">
+                                    @context
+                                </TopToolTip>
+                            </TabWrapperContent>
+                            <ChildContent>
+                                <div class="overflow-auto pa-2">
+                                    <MudForm @ref="_metadataForm"
+                                             Model="@Route"
+                                             Validation="@_validationHandler.ValidateAsync">
+                                        <MetadataEditor TParent="RouteModel" 
+                                                        Metadata="@Route.Metadata" 
+                                                        ForMetadata="@(() => Route.Metadata)" 
+                                                        SuggestedKeys="@SuggestedMetadataKeys"
+                                                        IsEnabled="@IsSectionEnabled(RouteConfigSection.Metadata)" />
+                                    </MudForm>
+                                </div>
+                            </ChildContent>
+                        </MudTabPanel>
+                    </ChildContent>
+                </MudTabs>
+            </CascadingValue>
+        </div>
+    </DialogContent>
+    <DialogActions>
+        <MudButton OnClick="Cancel">Cancel</MudButton>
+        <MudButton Color="@ColorResolver.Buttons.Save" OnClick="Save">Save</MudButton>
+    </DialogActions>
+</MudDialog>
+
+@code {
+    private MudForm? _mainForm;
+    private MudForm? _generalForm;
+    private MudForm? _matchForm;
+    private MudForm? _transformForm;
+    private MudForm? _metadataForm;
+
+    private DeferredValidationHandler<RouteModel>? _validationHandler;
+    private bool _validatedOnOpen;
+
+    private string? _beforeRouteID;
+    private List<ClusterModel> _clusters = [];
+    private List<PolicyInfo> _authorizationPolicies = [];
+    private List<PolicyInfo> _rateLimiterPolicies = [];
+    private List<PolicyInfo> _outputCachePolicies = [];
+    private List<PolicyInfo> _timeoutPolicies = [];
+    private List<PolicyInfo> _corsPolicies = [];
+    private List<CustomTransformDefinition> _customTransforms = [];
+
+    [CascadingParameter]
+    private IMudDialogInstance MudDialog { get; set; } = default!;
+
+    [Parameter, EditorRequired]
+    public string? RouteID { get; set; }
+
+    [Parameter, EditorRequired]
+    public required RouteModel Route { get; set; }
+
+    [Parameter, EditorRequired]
+    public required ConfigurationProfile ConfigurationProfile { get; set; }
+
+    [Parameter]
+    public bool ValidateWhenOpened { get; set; }
+
+    private List<MudForm> Forms => new MudForm?[]
+    {
+        _mainForm,
+        _generalForm,
+        _matchForm,
+        _transformForm,
+        _metadataForm
+    }
+    .Where(x => x != null)
+    .Select(x => x!)
+    .ToList();
+
+    private bool IsSectionEnabled(RouteConfigSection section) =>
+        Route.SectionSwitches[section].IsEnabled;
+
+    private List<string> SuggestedMetadataKeys { get; set; } = [];
+
+    private async Task OnEditClusterAsync(string clusterID)
+    {
+        var editedClusterID = await ClusterEditorService.OpenAsync(ConfigurationProfile.ID, clusterID);
+        if (editedClusterID != null && editedClusterID != clusterID && Route.ClusterID == clusterID)
+            Route.ClusterID = editedClusterID;
+    }
+
+    private async Task OnCreateClusterAsync()
+    {
+        var newClusterID = await ClusterEditorService.OpenAsync(ConfigurationProfile.ID, new ClusterModel() { ClusterID = "" });
+        if (newClusterID != null)
+            Route.ClusterID = newClusterID;
+    }
+
+    private async Task OnCloneClusterAsync(string clusterID)
+    {
+        var cluster = ConfigurationProfile.Configuration.Clusters.Find(x => x.ClusterID == clusterID);
+        if (cluster != null)
+        {
+            var clonedCluster = cluster.DeepClone();
+            clonedCluster.ClusterID += " Cloned";
+
+            var newClusterID = await ClusterEditorService.OpenAsync(ConfigurationProfile.ID, clonedCluster);
+            if (newClusterID != null)
+                Route.ClusterID = newClusterID;
+        }
+    }
+
+    private async Task Save()
+    {
+        if (_validationHandler == null)
+            return;
+
+        await _validationHandler.ExecuteValidationAsync(() => Task.WhenAll(Forms.Select(x => x.ValidateAsync())));
+
+        if (!Forms.TrueForAll(x => x.IsValid))
+            return;
+
+        var exceptions = await ConfigValidator.ValidateRouteAsync(Mapper.Map<RouteConfig>(Route));
+        if (exceptions.Count > 0)
+        {
+            var options = new DialogOptions()
+            {
+                MaxWidth = MaxWidth.Small,
+                FullWidth = true,
+            };
+
+            var parameters = new DialogParameters<ValidationErrorsDialog>()
+            {
+                { x => x.Errors, exceptions.Select(x => x.Message).ToList() },
+            };
+
+            await DialogService.ShowAsync<ValidationErrorsDialog>(null, parameters, options);
+        }
+        else
+            MudDialog.Close(DialogResult.Ok(new RouteDialogResult(Route, _beforeRouteID)));
+    }
+
+    private void Cancel() => MudDialog.Cancel();
+
+    protected override async Task OnInitializedAsync()
+    {
+        await base.OnInitializedAsync();
+
+        Validator.ContextData[ValidatorContext.Route.ORIGINAL_ID] = RouteID;
+        _validationHandler = new(Validator);
+
+        var authorizationPoliciesTask = PolicyProvider.GetPoliciesAsync(PolicyType.Authorization, default);
+        var rateLimiterPoliciesTask = PolicyProvider.GetPoliciesAsync(PolicyType.RateLimiter, default);
+        var outputCachePoliciesTask = PolicyProvider.GetPoliciesAsync(PolicyType.OutputCache, default);
+        var timeoutPoliciesTask = PolicyProvider.GetPoliciesAsync(PolicyType.Timeout, default);
+        var corsPoliciesTask = PolicyProvider.GetPoliciesAsync(PolicyType.Cors, default);
+
+        await Task.WhenAll(
+            authorizationPoliciesTask,
+            rateLimiterPoliciesTask,
+            outputCachePoliciesTask,
+            timeoutPoliciesTask,
+            corsPoliciesTask);
+
+        RefreshFromState();
+
+        _authorizationPolicies = authorizationPoliciesTask.Result;
+        _rateLimiterPolicies = rateLimiterPoliciesTask.Result;
+        _outputCachePolicies = outputCachePoliciesTask.Result;
+        _timeoutPolicies = timeoutPoliciesTask.Result;
+        _corsPolicies = corsPoliciesTask.Result;
+    }
+
+    protected override void OnParametersSet()
+    {
+        base.OnParametersSet();
+
+        var routeIndex = ConfigurationProfile.Configuration.Routes.FindIndex(x => x.RouteID == Route.RouteID);
+        if (routeIndex >= 0 && routeIndex < ConfigurationProfile.Configuration.Routes.Count - 1)
+            _beforeRouteID = ConfigurationProfile.Configuration.Routes[routeIndex + 1].RouteID;
+    }
+
+    protected override async Task OnAfterRenderAsync(bool firstRender)
+    {
+        if (firstRender && ValidateWhenOpened && _validationHandler != null && !_validatedOnOpen)
+        {
+            _validatedOnOpen = true;
+
+            // Let child components finish their first render/field registration.
+            await Task.Yield();
+
+            await _validationHandler.ExecuteValidationAsync(() => Task.WhenAll(Forms.Select(x => x.ValidateAsync())));
+        }
+    }
+
+    protected override void RefreshState(CurrentConfigurationProfileState state)
+    {
+        base.RefreshState(state);
+        RefreshFromState();
+    }
+
+    private void RefreshFromState()
+    {
+        if (State.SelectedProfile?.ID == ConfigurationProfile.ID)
+        {
+            _clusters = State.SelectedProfile.Configuration.Clusters;
+            _customTransforms = State.SelectedProfile.Configuration.CustomTransforms;
+        }
+    }
+}

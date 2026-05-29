@@ -1,0 +1,58 @@
+﻿@using Microsoft.Extensions.Options
+@using System.Reflection
+
+@inject IOptions<YARPadOptions> Options
+
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>YARPad</title>
+    <base href="@Options.Value.GetBasePath()" />
+    <ResourcePreloader />
+    <link rel="stylesheet" href="@Assets["_content/CodingCell.YARPad/lib/bootstrap/dist/css/bootstrap.min.css"]" />
+    <link rel="stylesheet" href="@Assets["_content/CodingCell.YARPad/app.css"]" />
+    <link rel="stylesheet" href="@Assets[$"{HostAssemblyName}.styles.css"]" />
+    <link href="https://fonts.googleapis.com/css?family=Roboto:300,400,500,700&display=swap" rel="stylesheet" />
+    <link href="https://fonts.googleapis.com/css2?family=Black+Ops+One&family=Oswald:wght@200..700&display=swap" rel="stylesheet">
+    <link href="@Assets["_content/MudBlazor/MudBlazor.min.css"]" rel="stylesheet" />
+    <link href="https://use.fontawesome.com/releases/v7.1.0/css/all.css" rel="stylesheet">
+    <ImportMap />
+    <link rel="apple-touch-icon" sizes="180x180" href="@Assets["_content/CodingCell.YARPad/apple-touch-icon.png"]" />
+    <link rel="icon" type="image/png" sizes="32x32" href="@Assets["_content/CodingCell.YARPad/favicon-32x32.png"]" />
+    <link rel="icon" type="image/png" sizes="16x16" href="@Assets["_content/CodingCell.YARPad/favicon-16x16.png"]" />
+    <link rel="manifest" href="@Assets["_content/CodingCell.YARPad/site.webmanifest"]" />
+    <script src="@Assets["_content/CodingCell.YARPad/js/yarpad.js"]"></script>
+    <HeadOutlet @rendermode="PageRenderMode" />
+</head>
+
+<body class="yarpad-theme-dark">
+<script>
+    window.yarpadBasePath = '@Options.Value.GetNormalizedPathPrefix()';
+    (() => {
+        if (window.yarpadTheme && typeof window.yarpadTheme.applyFromCookie === 'function') {
+            window.yarpadTheme.applyFromCookie();
+        }
+    })();
+</script>
+<Routes @rendermode="PageRenderMode" />
+    <ReconnectModal />
+    <script src="@Assets["_framework/blazor.web.js"]"></script>
+    <script src="@Assets["_content/CodingCell.YARPad/Components/Account/Shared/PasskeySubmit.razor.js"]" type="module"></script>
+    <script src="@Assets["_content/MudBlazor/MudBlazor.min.js"]"></script>
+
+</body>
+
+</html>
+
+@code {
+    [CascadingParameter]
+    private HttpContext HttpContext { get; set; } = default!;
+
+    private IComponentRenderMode? PageRenderMode =>
+        HttpContext.AcceptsInteractiveRouting() ? InteractiveServer : null;
+
+    private string HostAssemblyName => Assembly.GetEntryAssembly()?.GetName().Name ?? throw new InvalidOperationException("Unable to determine host assembly.");
+}

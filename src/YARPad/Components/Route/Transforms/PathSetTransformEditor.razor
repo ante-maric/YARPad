@@ -1,0 +1,12 @@
+<TopToolTip Text="@Tooltips.Transforms_PathSet_Field">
+    <MudTextField Label="ⓘ Replacement Path"
+                  @bind-Value="Transform.PathSet"
+                  For="@(() => Transform.PathSet)"
+                  Variant="Variant.Outlined"
+                  Margin="Margin.Dense" />
+</TopToolTip>
+
+@code {
+    [Parameter, EditorRequired]
+    public required PathSetTransform Transform { get; set; }
+}

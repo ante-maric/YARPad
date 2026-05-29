@@ -1,0 +1,30 @@
+﻿<MudStack Spacing="2">
+    <TopToolTip Text="@Tooltips.Transforms_HttpMethodChange_Name">
+        <MudSelect Label="ⓘ Source Method"
+                   @bind-Value="Transform.HttpMethodChange"
+                   For="@(() => Transform.HttpMethodChange)"
+                   Variant="Variant.Outlined" Margin="Margin.Dense">
+            @foreach (var method in HttpMethod.All)
+            {
+                <MudSelectItem Value="@method.ID">@method.Name</MudSelectItem>
+            }
+        </MudSelect>
+    </TopToolTip>
+
+    <TopToolTip Text="@Tooltips.Transforms_HttpMethodChange_Set">
+        <MudSelect Label="ⓘ Destination Method"
+                   @bind-Value="Transform.Set"
+                   For="@(() => Transform.Set)"
+                   Variant="Variant.Outlined" Margin="Margin.Dense">
+            @foreach (var method in HttpMethod.All)
+            {
+                <MudSelectItem Value="@method.ID">@method.Name</MudSelectItem>
+            }
+        </MudSelect>
+    </TopToolTip>
+</MudStack>
+
+@code {
+    [Parameter, EditorRequired]
+    public required HttpMethodChangeTransform Transform { get; set; }
+}

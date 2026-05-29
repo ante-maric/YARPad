@@ -1,0 +1,12 @@
+<TopToolTip Text="@Tooltips.Transforms_PathPrefix_Field">
+    <MudTextField Label="ⓘ Add Path Prefix"
+                  @bind-Value="Transform.PathPrefix"
+                  For="@(() => Transform.PathPrefix)"
+                  Variant="Variant.Outlined"
+                  Margin="Margin.Dense" />
+</TopToolTip>
+
+@code {
+    [Parameter, EditorRequired]
+    public required PathPrefixTransform Transform { get; set; }
+}
