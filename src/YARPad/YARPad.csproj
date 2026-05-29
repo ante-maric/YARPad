@@ -10,7 +10,7 @@
 		<Version>0.18.20</Version>
 		<PackageId>CodingCell.YARPad</PackageId>
 		<Authors>Ante Marić</Authors>
-		<Description>Blazor Server admin UI for YARP (Yet Another Reverse Proxy).</Description>
+		<Description>A full-featured admin console for YARP (Yet Another Reverse Proxy).</Description>
 		<PackageTags>yarp;reverse-proxy;blazor;blazor-server;aspnetcore;devtools</PackageTags>
 		<RepositoryUrl>https://github.com/ante-maric/YARPad</RepositoryUrl>
 		<PackageLicenseExpression>Apache-2.0</PackageLicenseExpression>
