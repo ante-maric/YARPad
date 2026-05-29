@@ -2,6 +2,7 @@
   <h1>YARPad</h1>
   <p><strong>A full-featured admin console for <a href="https://github.com/dotnet/yarp">YARP (Yet Another Reverse Proxy)</a>.</strong></p>
   
+  [![NuGet](https://img.shields.io/nuget/v/CodingCell.YARPad.svg)](https://www.nuget.org/packages/CodingCell.YARPad/)
   ![Blazor Server](https://img.shields.io/badge/Blazor-Server-512BD4?logo=blazor&logoColor=white)
   [![License](https://img.shields.io/badge/license-Apache--2.0-green.svg)](LICENSE)
 </div>
