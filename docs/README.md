@@ -62,6 +62,7 @@ Run YARP as a standalone Docker container with browser-based management — no c
 
 - [🧭 Overview](proxy/overview.md) — What it is, features, architecture
 - [🐳 Docker Deployment](proxy/docker-deployment.md) — docker-compose, environment variables, volumes, Let's Encrypt
+- [📦 Container Registry](https://github.com/ante-maric/YARPad/pkgs/container/yarpad-proxy) — Published YARPad Proxy images and version tags
 
 ---
 

@@ -5,10 +5,6 @@
     <File Path="../docker-compose.yml" />
     <File Path="../LICENSE" />
     <File Path="../NOTICE" />
-    <File Path="../nuget-readme.md" />
-    <File Path="../Original-README.md" />
-    <File Path="../README - YARPad Proxy.md" />
-    <File Path="../README - YARPadPro.md" />
   </Folder>
   <Project Path="YARPad.Hosting/YARPad.Hosting.csproj" Id="f8f74075-deee-4c92-8ad1-87bc8e1ee72f" />
   <Project Path="YARPad.Proxy/YARPad.Proxy.csproj" Id="c5e8eb8f-1d66-47c5-8ca5-c629ef1665c4" />

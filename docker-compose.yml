@@ -9,7 +9,7 @@ services:
     restart: "no"
 
   yarpad:
-    image: onedev.cscell.eu/amaric/packages/yarpad-proxy:0.16.0
+    image: ghcr.io/ante-maric/yarpad-proxy:latest
     restart: unless-stopped
     depends_on:
       yarpad-init:

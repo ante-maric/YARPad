@@ -4,7 +4,7 @@
 
 **YARPad Proxy** is a turnkey Docker appliance that bundles [YARP (Yet Another Reverse Proxy)](https://github.com/dotnet/yarp) with the [YARPad](../library/getting-started.md) browser-based management UI into a single, ready-to-run container. It is designed for teams that need a reverse proxy with visual configuration management but don't want to build and maintain a custom ASP.NET Core host application.
 
-Where the **YARPad library** is a NuGet package you integrate into your own app, **YARPad Proxy** is the app — you pull the Docker image, configure it with environment variables, and run it.
+Where the **YARPad library** is a NuGet package you integrate into your own app, **YARPad Proxy** is the app — you pull the Docker image, configure it with environment variables, and run it. Find published images and version tags in the [YARPad Proxy GitHub Container Registry](https://github.com/ante-maric/YARPad/pkgs/container/yarpad-proxy).
 
 ---
 

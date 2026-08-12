@@ -2,6 +2,8 @@
 
 ## Quick Start with Docker Compose
 
+Images and available version tags are published in the [YARPad Proxy GitHub Container Registry](https://github.com/ante-maric/YARPad/pkgs/container/yarpad-proxy).
+
 Create a `docker-compose.yml`:
 
 ```yaml
@@ -16,7 +18,7 @@ services:
     restart: "no"
 
   yarpad:
-    image: onedev.cscell.eu/amaric/packages/yarpad-proxy:0.16.0
+    image: ghcr.io/ante-maric/yarpad-proxy:0.16.0
     restart: unless-stopped
     depends_on:
       yarpad-init:
@@ -253,7 +255,7 @@ services:
     restart: "no"
 
   yarpad:
-    image: onedev.cscell.eu/amaric/packages/yarpad-proxy:0.16.0
+    image: ghcr.io/ante-maric/yarpad-proxy:0.16.0
     restart: unless-stopped
     depends_on:
       yarpad-init:
