@@ -7,7 +7,7 @@
 		<AddRazorSupportForMvc>true</AddRazorSupportForMvc>
 		<InvariantGlobalization>true</InvariantGlobalization>
 		<RootNamespace>CodingCell.YARPad</RootNamespace>
-		<Version>0.18.20</Version>
+		<Version>0.18.21</Version>
 		<PackageId>CodingCell.YARPad</PackageId>
 		<Authors>Ante Marić</Authors>
 		<Description>A full-featured admin console for YARP (Yet Another Reverse Proxy).</Description>
@@ -41,16 +41,16 @@
 		<PackageReference Include="FluentValidation" Version="12.1.1" />
 		<PackageReference Include="FluentValidation.DependencyInjectionExtensions" Version="12.1.1" />
 		<PackageReference Include="Humanizer.Core" Version="3.0.10" />
-		<PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.8" />
-		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.8" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.8" />
-		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.8">
+		<PackageReference Include="Microsoft.AspNetCore.Diagnostics.EntityFrameworkCore" Version="10.0.11" />
+		<PackageReference Include="Microsoft.AspNetCore.Identity.EntityFrameworkCore" Version="10.0.11" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Sqlite" Version="10.0.11" />
+		<PackageReference Include="Microsoft.EntityFrameworkCore.Tools" Version="10.0.11">
 		  <PrivateAssets>all</PrivateAssets>
 		  <IncludeAssets>runtime; build; native; contentfiles; analyzers; buildtransitive</IncludeAssets>
 		</PackageReference>
-		<PackageReference Include="MudBlazor" Version="9.5.0" />
-		<PackageReference Include="Net.Codecrete.QrCodeGenerator" Version="3.0.0" />
-		<PackageReference Include="System.Reactive" Version="6.1.0" />
+		<PackageReference Include="MudBlazor" Version="9.8.0" />
+		<PackageReference Include="Net.Codecrete.QrCodeGenerator" Version="3.1.0" />
+		<PackageReference Include="System.Reactive" Version="7.0.0" />
 		<PackageReference Include="Yarp.ReverseProxy" Version="2.3.0" />
 	</ItemGroup>
 
