@@ -100,8 +100,11 @@
         else
         {
             var existing = Metadata.Find(x => x.Key == metadataKey);
-            existing.Key = editedMetadata.Key;
-            existing.Value = editedMetadata.Value;
+            if (existing != null)
+            {                
+                existing.Key = editedMetadata.Key;
+                existing.Value = editedMetadata.Value;
+            }
         }
     }
 

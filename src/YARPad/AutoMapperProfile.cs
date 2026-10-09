@@ -1,4 +1,5 @@
-﻿using System.Security.Authentication;
+﻿using System.Reflection;
+using System.Security.Authentication;
 using AutoMapper;
 using AutoMapper.Internal;
 using Yarp.ReverseProxy.Configuration;
@@ -7,7 +8,10 @@ using Yarp.ReverseProxy.Forwarder;
 namespace CodingCell.YARPad;
 
 internal class AutoMapperProfile : Profile
-{    
+{
+    private static readonly System.Linq.Expressions.Expression<Func<string?, string?>> _emptyStringToNull =
+        value => string.IsNullOrEmpty(value) ? null : value;
+
     public AutoMapperProfile()
     {
         CreateMap<ClusterModel, ClusterModel>()
@@ -98,11 +102,11 @@ internal class AutoMapperProfile : Profile
         CreateMap<ClusterModel, ClusterConfig>()
             .ForMember(x => x.ClusterId, x => x.MapFrom(y => y.ClusterID))
             .ForMember(x => x.Destinations, x => x.MapFrom(y => y.Destinations.Where(d => d.IsEnabled).ToDictionary(d => d.ID)))
-            .ForMember(x => x.Metadata, opt => opt.Condition(y => IsClusterConfigSectionEnabled(y, ClusterConfigSection.Metadata) && y.Metadata.Any()))
-            .ForMember(x => x.SessionAffinity, x => x.Condition(y => IsClusterConfigSectionEnabled(y, ClusterConfigSection.SessionAffinity)))
-            .ForMember(x => x.HealthCheck, x => x.Condition(y => IsClusterConfigSectionEnabled(y, ClusterConfigSection.HealthCheck)))
-            .ForMember(x => x.HttpClient, x => x.Condition(y => IsClusterConfigSectionEnabled(y, ClusterConfigSection.HttpClient)))
-            .ForMember(x => x.HttpRequest, x => x.Condition(y => IsClusterConfigSectionEnabled(y, ClusterConfigSection.HttpRequest)));        
+            .ForMember(x => x.Metadata, opt => opt.Condition(y => y.IsSectionEnabled(ClusterConfigSection.Metadata) && y.Metadata.Any()))
+            .ForMember(x => x.SessionAffinity, x => x.Condition(y => y.IsSectionEnabled(ClusterConfigSection.SessionAffinity)))
+            .ForMember(x => x.HealthCheck, x => x.Condition(y => y.IsSectionEnabled(ClusterConfigSection.HealthCheck)))
+            .ForMember(x => x.HttpClient, x => x.Condition(y => y.IsSectionEnabled(ClusterConfigSection.HttpClient)))
+            .ForMember(x => x.HttpRequest, x => x.Condition(y => y.IsSectionEnabled(ClusterConfigSection.HttpRequest)));        
 
         CreateMap<SessionAffinityModel, SessionAffinityConfig>()
             .ForMember(x => x.Enabled, x => x.MapFrom(y => true));
@@ -114,7 +118,8 @@ internal class AutoMapperProfile : Profile
 
         CreateMap<IEnumerable<SslProtocols>, SslProtocols>().ConvertUsing(protocols => protocols.ToSingleFlag());
         CreateMap<HttpClientModel, HttpClientConfig>();
-        CreateMap<WebProxyModel, WebProxyConfig>();
+        CreateMap<WebProxyModel, WebProxyConfig>()
+            .ForMember(x => x.Address, x => x.MapFrom(y => ToAbsoluteUri(y.Address)));
 
         CreateMap<ForwarderRequestModel, ForwarderRequestConfig>();
         CreateMap<DestinationModel, DestinationConfig>();
@@ -127,10 +132,10 @@ internal class AutoMapperProfile : Profile
         CreateMap<RouteModel, RouteConfig>()
             .ForMember(x => x.RouteId, x => x.MapFrom(y => y.RouteID))
             .ForMember(x => x.ClusterId, x => x.MapFrom(y => y.ClusterID))
-            .ForMember(x => x.Metadata, x => x.Condition(y => IsRouteConfigSectionEnabled(y, RouteConfigSection.Metadata) && y.Metadata.Any()))
+            .ForMember(x => x.Metadata, x => x.Condition(y => y.IsSectionEnabled(RouteConfigSection.Metadata) && y.Metadata.Any()))
             .ForMember(x => x.Transforms, opt =>
             {
-                opt.Condition(y => IsRouteConfigSectionEnabled(y, RouteConfigSection.Transform) && y.Transforms.Any());
+                opt.Condition(y => y.IsSectionEnabled(RouteConfigSection.Transform) && y.Transforms.Any());
                 opt.MapFrom(y => y.Transforms.Select(x => x.ToDictionary()).ToList());
             })
             .ForMember(x => x.Order, x => x.Ignore());
@@ -150,20 +155,30 @@ internal class AutoMapperProfile : Profile
             }))
             .ForMember(x => x.ChangeToken, x => x.Ignore());
 
+        var nullabilityContext = new NullabilityInfoContext();
+
         this.Internal().ForAllMaps((typeMap, map) =>
         {
             // — matching System.Text.Json and Newtonsoft.Json
             map.MaxDepth(64);
+
+            // Cleared MudBlazor text fields bind "" rather than null; pass "not set" to YARP as null,
+            // but only for properties YARP declares nullable so non-nullable ones keep their contract.
+            if (typeMap.DestinationType.Namespace?.StartsWith("Yarp.ReverseProxy", StringComparison.Ordinal) != true)
+                return;
+
+            foreach (var propertyMap in typeMap.PropertyMaps)
+            {
+                if (propertyMap.DestinationMember is PropertyInfo property
+                    && property.PropertyType == typeof(string)
+                    && nullabilityContext.Create(property).WriteState == NullabilityState.Nullable)
+                {
+                    propertyMap.AddValueTransformation(new(typeof(string), _emptyStringToNull));
+                }
+            }
         });
     }
 
-    private static bool IsClusterConfigSectionEnabled(ClusterModel clusterModel, ClusterConfigSection section)
-    {
-        return clusterModel.SectionSwitches.TryGetValue(section, out var sectionSwitch) && sectionSwitch.IsEnabled;
-    }
-
-    private static bool IsRouteConfigSectionEnabled(RouteModel routeModel, RouteConfigSection section)
-    {
-        return routeModel.SectionSwitches.TryGetValue(section, out var sectionSwitch) && sectionSwitch.IsEnabled;
-    }
+    private static Uri? ToAbsoluteUri(string? address) =>
+        Uri.TryCreate(address, UriKind.Absolute, out var uri) ? uri : null;
 }

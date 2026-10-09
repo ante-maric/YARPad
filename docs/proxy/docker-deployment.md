@@ -18,7 +18,7 @@ services:
     restart: "no"
 
   yarpad:
-    image: ghcr.io/ante-maric/yarpad-proxy:0.16.0
+    image: ghcr.io/ante-maric/yarpad-proxy:0.20.5
     restart: unless-stopped
     depends_on:
       yarpad-init:

@@ -137,6 +137,69 @@ public class ClusterModelTests : AutoMapperTest
         actual.Destinations.ContainsKey("destination2").ShouldBeFalse();
     }
 
+    [Fact]
+    public void MapToClusterConfig_ShouldMapEmptyDestinations_WhenAllDestinationsDisabled()
+    {
+        var expected = CreateClusterModelWithData();
+        foreach (var destination in expected.Destinations)
+        {
+            destination.IsEnabled = false;
+        }
+
+        var actual = _mapper.Map<ClusterConfig>(expected);
+
+        actual.Destinations.ShouldNotBeNull().ShouldBeEmpty();
+    }
+
+    [Theory]
+    [InlineData("invalid proxy address")]
+    [InlineData("relative/path")]
+    [InlineData("")]
+    [InlineData(null)]
+    public void MapToClusterConfig_ShouldMapInvalidWebProxyAddressToNull(string? address)
+    {
+        var expected = CreateClusterModelWithData();
+        SetSectionEnabled(expected, true, ClusterConfigSection.HttpClient);
+        expected.HttpClient.WebProxy.Address = address;
+
+        var actual = _mapper.Map<ClusterConfig>(expected);
+
+        actual.HttpClient.ShouldNotBeNull();
+        actual.HttpClient.WebProxy.ShouldNotBeNull();
+        actual.HttpClient.WebProxy.Address.ShouldBeNull();
+    }
+
+    [Fact]
+    public void MapToClusterConfig_ShouldMapEmptyStringsToNull_OnlyForNullableProperties()
+    {
+        var expected = CreateClusterModelWithData();
+        SetSectionEnabled(expected, true,
+            ClusterConfigSection.Metadata,
+            ClusterConfigSection.SessionAffinity,
+            ClusterConfigSection.HealthCheck);
+        var destination = expected.Destinations[0];
+        destination.Address = "";
+        destination.Health = "";
+        destination.Host = "";
+        destination.Metadata = [new YarpMetadata { Key = "key", Value = "" }];
+        expected.SessionAffinity.AffinityKeyName = "";
+        expected.SessionAffinity.Cookie.Domain = "";
+        expected.HealthCheck.Active.Path = "";
+        expected.HealthCheck.Active.Query = "";
+
+        var actual = _mapper.Map<ClusterConfig>(expected);
+
+        var actualDestination = actual.Destinations.ShouldNotBeNull()[destination.ID];
+        actualDestination.Address.ShouldBe("");
+        actual.SessionAffinity.ShouldNotBeNull().AffinityKeyName.ShouldBe("");
+        actualDestination.Health.ShouldBeNull();
+        actualDestination.Host.ShouldBeNull();
+        actualDestination.Metadata.ShouldNotBeNull()["key"].ShouldBe("");
+        actual.SessionAffinity.ShouldNotBeNull().Cookie.ShouldNotBeNull().Domain.ShouldBeNull();
+        actual.HealthCheck.ShouldNotBeNull().Active.ShouldNotBeNull().Path.ShouldBeNull();
+        actual.HealthCheck?.Active?.Query.ShouldBeNull();
+    }
+
     private ClusterModel CreateClusterModelWithData()
     {
         var cluster = _fixture.Build<ClusterModel>()

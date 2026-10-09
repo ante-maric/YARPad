@@ -17,7 +17,7 @@ public class ClusterMetadataValidator : MetadataValidator<ClusterModel>
         _serviceProvider = serviceProvider;
     }
 
-    protected override bool MustBeValidAgaintsTransformProviders(ClusterModel parent, List<YarpMetadata> metadata, ValidationContext<List<YarpMetadata>> context)
+    protected override void ValidateAgainstTransformProviders(ClusterModel parent, List<YarpMetadata> metadata, ValidationContext<List<YarpMetadata>> context)
     {
         var transformValidationContext = new TransformClusterValidationContext
         {
@@ -25,14 +25,10 @@ public class ClusterMetadataValidator : MetadataValidator<ClusterModel>
             Services = _serviceProvider
         };
 
-        var values = parent.Metadata.ToDictionary(p => p.Key, p => p.Value);
-
         foreach (var transformProvider in _transformProviders)
             transformProvider.ValidateCluster(transformValidationContext);
         
         foreach (var error in transformValidationContext.Errors)
             context.AddFailure(error.Message);
-
-        return transformValidationContext.Errors.Count == 0;
     }
 }

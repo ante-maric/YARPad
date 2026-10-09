@@ -329,11 +329,11 @@
                 ID = Guid.Empty,
                 Name = importedProfile.Name,
                 Description = importedProfile.Description,
-                Configuration = importedProfile.Configuration,
+                Configuration = new(),
                 IsActive = false
             };
 
-            await OpenConfigurationProfileEditorAsync(configurationProfile, ImportConfigurationProfileAsync);
+            await OpenConfigurationProfileEditorAsync(configurationProfile, x => ImportConfigurationProfileAsync(x, importedProfile.Configuration));
         }
         catch (JsonException)
         {
@@ -365,7 +365,9 @@
             MaxWidth = MaxWidth.Medium,
             FullWidth = true,
         };
-
+        
+        // The dialog only edits name and description, so the draft does not carry the profile's configuration,
+        // which would be the store's own object.
         var parameters = new DialogParameters<ConfigurationProfileDialog>()
         {
             { x => x.Profile, new ConfigurationProfile()
@@ -373,7 +375,7 @@
                     ID = configProfile.ID,
                     Name = configProfile.Name,
                     Description = configProfile.Description,
-                    Configuration = configProfile.Configuration
+                    Configuration = new()
                 }
             },
         };
@@ -392,9 +394,8 @@
         var configurationEntity = editedConfigProfile.ID == Guid.Empty
             ? await ConfigurationProvider.CreateConfigurationAsync(editedConfigProfile.Name, editedConfigProfile.Description)
             : await ConfigurationProvider.CloneConfigurationAsync(editedConfigProfile.ID, editedConfigProfile.Name, editedConfigProfile.Description);
-        var newProfile = configurationEntity.ToConfigurationProfile();
 
-        CurrentConfigurationProfileStateStore.Update(x => x with { SelectedProfile = State.ConfigurationProfile.Profiles.First(x => x.ID == configurationEntity.ID) });
+        SelectProfile(configurationEntity.ID);
     }
 
     private async Task EditConfigurationProfileAsync(ConfigurationProfile editedConfigProfile)
@@ -402,12 +403,18 @@
         await ConfigurationProvider.UpdateConfigurationAsync(editedConfigProfile.ID, editedConfigProfile.Name, editedConfigProfile.Description);
     }
 
-    private async Task ImportConfigurationProfileAsync(ConfigurationProfile editedConfigProfile)
+    private async Task ImportConfigurationProfileAsync(ConfigurationProfile editedConfigProfile, YARPadConfiguration importedConfiguration)
     {
-        var configurationEntity = await ConfigurationProvider.ImportConfigurationAsync(editedConfigProfile);
-        var profile = configurationEntity.ToConfigurationProfile();
+        editedConfigProfile.Configuration = importedConfiguration;
 
-        CurrentConfigurationProfileStateStore.Update(x => x with { SelectedProfile = profile });
+        var configurationEntity = await ConfigurationProvider.ImportConfigurationAsync(editedConfigProfile);
+
+        SelectProfile(configurationEntity.ID);
+    }
+
+    private void SelectProfile(Guid configurationProfileID)
+    {
+        CurrentConfigurationProfileStateStore.Update(x => x with { SelectedProfile = ConfigurationProfileStateStore.Current.Profiles.First(p => p.ID == configurationProfileID) });
     }
 
     private async Task OnViewYarpConfigAsync()

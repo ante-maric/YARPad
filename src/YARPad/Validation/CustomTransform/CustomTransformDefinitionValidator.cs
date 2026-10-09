@@ -5,13 +5,13 @@ namespace CodingCell.YARPad;
 
 public class CustomTransformDefinitionValidator : MudValidator<CustomTransformDefinition>
 {
-    private readonly IStoreReader<CurrentConfigurationProfileState> _currentConfigurationStateStore;
+    private readonly IStoreReader<ConfigurationProfileState> _configurationProfileStore;
 
     public CustomTransformDefinitionValidator(
-        IStoreReader<CurrentConfigurationProfileState> currentConfigurationStateStore, 
+        IStoreReader<ConfigurationProfileState> configurationProfileStore, 
         CustomTransformParameterDefinitionValidator parameterValidator)
     {
-        _currentConfigurationStateStore = currentConfigurationStateStore;
+        _configurationProfileStore = configurationProfileStore;
 
         RuleFor(x => x.Type)
             .NotEmpty()
@@ -38,7 +38,7 @@ public class CustomTransformDefinitionValidator : MudValidator<CustomTransformDe
 
     private bool TypeMustBeUnique(CustomTransformDefinition definition, string type, ValidationContext<CustomTransformDefinition> context)
     {
-        var configuration = _currentConfigurationStateStore.Current.SelectedProfile?.Configuration;
+        var configuration = context.GetConfiguration(_configurationProfileStore);
         var originalType = context.RootContextData.TryGetValue(ValidatorContext.CustomTransform.ORIGINAL_TYPE, out var value) ? value as string : null;
 
         return configuration?.CustomTransforms.TrueForAll(x => x.Type == originalType || x.Type != type) == true;

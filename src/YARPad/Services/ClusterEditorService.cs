@@ -10,20 +10,39 @@ internal class ClusterEditorService(
     IStateStore<ConfigurationProfileState> stateStore,
     ILogger<ClusterEditorService> logger) : IClusterEditorService
 {
+    public Task<string?> CreateAsync(Guid configurationProfileID)
+    {
+        return OpenEditorAsync(configurationProfileID, new ClusterModel() { ClusterID = "" });
+    }
+
     public async Task<string?> OpenAsync(Guid configurationProfileID, string clusterID, bool validateWhenOpened = false)
     {
-        var configuration = stateStore.Current.Profiles.FirstOrDefault(x => x.ID == configurationProfileID)?.Configuration;
-        if (configuration == null)
-            return null;
-
-        var cluster = configuration.Clusters.FirstOrDefault(x => x.ClusterID == clusterID);
+        var cluster = FindCluster(configurationProfileID, clusterID);
         if (cluster == null)
             return null;
 
-        return await OpenAsync(configurationProfileID, cluster.DeepClone(), clusterID, validateWhenOpened);
+        return await OpenEditorAsync(configurationProfileID, cluster.DeepClone(), clusterID, validateWhenOpened);
     }
 
-    public async Task<string?> OpenAsync(Guid configurationProfileID, ClusterModel cluster, string? clusterID = null, bool validateWhenOpened = false)
+    public async Task<string?> CloneAsync(Guid configurationProfileID, string clusterID)
+    {
+        var cluster = FindCluster(configurationProfileID, clusterID);
+        if (cluster == null)
+            return null;
+
+        var clonedCluster = cluster.DeepClone();
+        clonedCluster.ClusterID += " Cloned";
+
+        return await OpenEditorAsync(configurationProfileID, clonedCluster);
+    }
+
+    private ClusterModel? FindCluster(Guid configurationProfileID, string clusterID)
+    {
+        return stateStore.Current.Profiles.FirstOrDefault(x => x.ID == configurationProfileID)?.Configuration.Clusters.FirstOrDefault(x => x.ClusterID == clusterID);
+    }
+
+    // cluster is a draft the editor may change; never an object from the store.
+    private async Task<string?> OpenEditorAsync(Guid configurationProfileID, ClusterModel cluster, string? clusterID = null, bool validateWhenOpened = false)
     {
         var profile = stateStore.Current.Profiles.FirstOrDefault(x => x.ID == configurationProfileID);
         if (profile == null)
@@ -42,6 +61,7 @@ internal class ClusterEditorService(
         {
             { x => x.ClusterID, clusterID },
             { x => x.Cluster, cluster },
+            { x => x.ConfigurationProfileID, profile.ID },
             { x => x.ValidateWhenOpened, validateWhenOpened }
         };
 
@@ -56,7 +76,7 @@ internal class ClusterEditorService(
 
         try
         {
-            await configurationProvider.SaveClusterAsync(profile.ID, profile.Configuration, clusterID, savedCluster);
+            await configurationProvider.SaveClusterAsync(profile.ID, clusterID, savedCluster);
             logger.LogInformation("Saved cluster {ClusterID} to configuration profile {ConfigurationProfileID}", savedCluster.ClusterID, profile.ID);
 
             return savedCluster.ClusterID;

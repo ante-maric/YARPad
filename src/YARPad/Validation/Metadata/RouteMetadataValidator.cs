@@ -17,15 +17,13 @@ public class RouteMetadataValidator : MetadataValidator<RouteModel>
         _serviceProvider = serviceProvider;
     }
 
-    protected override bool MustBeValidAgaintsTransformProviders(RouteModel parent, List<YarpMetadata> metadata, ValidationContext<List<YarpMetadata>> context)
+    protected override void ValidateAgainstTransformProviders(RouteModel parent, List<YarpMetadata> metadata, ValidationContext<List<YarpMetadata>> context)
     {
         var transformValidationContext = new TransformRouteValidationContext
         {
             Route = _mapper.Map<RouteConfig>(parent),
             Services = _serviceProvider
         };
-
-        var values = parent.Metadata.ToDictionary(p => p.Key, p => p.Value);
 
         foreach (var transformProvider in _transformProviders)
         {
@@ -34,7 +32,5 @@ public class RouteMetadataValidator : MetadataValidator<RouteModel>
 
         foreach (var error in transformValidationContext.Errors)
             context.AddFailure(error.Message);
-
-        return transformValidationContext.Errors.Count == 0;
     }
 }

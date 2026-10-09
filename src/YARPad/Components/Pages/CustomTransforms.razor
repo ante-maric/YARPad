@@ -4,7 +4,7 @@
 @inherits StateComponentBase<CurrentConfigurationProfileState>
 
 @inject IYARPadConfigurationProvider ConfigurationProvider
-@inject IDialogService DialogService
+@inject ICustomTransformEditorService CustomTransformEditorService
 
 <div style="max-width:900px;">
     <MudStack Spacing="3">
@@ -36,17 +36,27 @@
 
 @code {
     private async Task AddTransformAsync()
-        => await OpenTransformDialogAsync(new CustomTransformDefinition() { Type = "" });
+    {
+        if (State.SelectedProfile == null)
+            return;
+
+        await CustomTransformEditorService.CreateAsync(State.SelectedProfile.ID);
+    }
 
     private async Task EditTransformAsync(CustomTransformDefinition transform)
-        => await OpenTransformDialogAsync(transform.DeepClone(), transform.Type);
+    {
+        if (State.SelectedProfile == null)
+            return;
+
+        await CustomTransformEditorService.OpenAsync(State.SelectedProfile.ID, transform.Type);
+    }
 
     private async Task CloneTransformAsync(CustomTransformDefinition transform)
     {
-        var cloned = transform.DeepClone();
-        cloned.Type += " Cloned";
+        if (State.SelectedProfile == null)
+            return;
 
-        await OpenTransformDialogAsync(cloned);
+        await CustomTransformEditorService.CloneAsync(State.SelectedProfile.ID, transform.Type);
     }
 
     private async Task DeleteTransformAsync(CustomTransformDefinition transform)
@@ -54,7 +64,7 @@
         if (State.SelectedProfile == null)
             return;
 
-        await ConfigurationProvider.DeleteCustomTransformAsync(State.SelectedProfile.ID, State.SelectedProfile.Configuration, transform);
+        await ConfigurationProvider.DeleteCustomTransformAsync(State.SelectedProfile.ID, transform);
     }
 
     private List<string> GetUsedBy(string transformType)
@@ -66,31 +76,5 @@
             .Where(r => r.Transforms.OfType<CustomTransform>().Any(t => t.CustomTransformType == transformType))
             .Select(r => r.RouteID)
             .ToList();
-    }
-
-    private async Task OpenTransformDialogAsync(CustomTransformDefinition transform, string? originalType = null)
-    {
-        var options = new DialogOptions()
-        {
-            MaxWidth = MaxWidth.Medium,
-            FullWidth = true,
-        };
-
-        var parameters = new DialogParameters<CustomTransformDialog>()
-        {
-            { x => x.Transform, transform },
-            { x => x.OriginalType, originalType },
-        };
-
-        var dialog = await DialogService.ShowAsync<CustomTransformDialog>(null, parameters, options);
-        var result = await dialog.Result;
-
-        if (result == null || result.Canceled || result.Data is not CustomTransformDefinition savedTransform)
-            return;
-
-        if (State.SelectedProfile == null)
-            return;
-
-        await ConfigurationProvider.SaveCustomTransformAsync(State.SelectedProfile.ID, State.SelectedProfile.Configuration, originalType, savedTransform);
     }
 }

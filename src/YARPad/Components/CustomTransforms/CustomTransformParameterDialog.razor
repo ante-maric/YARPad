@@ -1,3 +1,4 @@
+@implements IDisposable
 @inject CustomTransformParameterDefinitionValidator Validator
 
 <MudDialog Class="border mud-border-primary-darken">
@@ -6,7 +7,7 @@
     </TitleContent>
 
     <DialogContent>
-        <MudForm @ref="_form" Model="@Parameter" Validation="_validationHandler.ValidateAsync">
+        <MudForm @ref="_form" Model="@Parameter" Validation="_validationHandler?.Validation">
             <MudStack Spacing="2">
                 <MudTextField Label="Name"
                               @bind-Value="Parameter.Name"
@@ -21,11 +22,13 @@
                               Variant="Variant.Outlined" />
             </MudStack>
         </MudForm>
+
+        <ValidationErrorList Errors="@(_validationHandler?.UnclaimedErrors ?? [])" />
     </DialogContent>
 
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="@ColorResolver.Buttons.Save" OnClick="Save">Save</MudButton>
+        <MudButton Color="@ColorResolver.Buttons.Save" OnClick="Save" Disabled="@(_validationHandler?.IsValidating == true)">Save</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -50,9 +53,7 @@
         if (_validationHandler == null || _form == null)
             return;
 
-        await _validationHandler.ExecuteValidationAsync(() => _form.ValidateAsync());
-
-        if (!_form.IsValid)
+        if (!await _validationHandler.ValidateAsync(Parameter, () => _form.ValidateAsync(), () => _form.IsValid))
             return;
 
         MudDialog.Close(DialogResult.Ok(Parameter));
@@ -70,8 +71,10 @@
     {
         base.OnParametersSet();
 
-        Validator.ContextData[ValidatorContext.CustomTransform.IS_EDITING_PARAMETER] = true;
-        Validator.ContextData[ValidatorContext.CustomTransform.ORIGINAL_PARAMETER_NAME] = OriginalName;
-        Validator.ContextData[ValidatorContext.CustomTransform.MODEL] = Transform;
+        var contextData = ValidatorContextData.CreateCustomTransformParameter(OriginalName, Transform);
+
+        _validationHandler?.SetContextData(contextData);
     }
+
+    void IDisposable.Dispose() => _validationHandler?.Dispose();
 }

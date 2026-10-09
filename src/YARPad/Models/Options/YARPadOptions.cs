@@ -8,7 +8,7 @@ public class YARPadOptions
 
     /// <summary>
     /// Connection string for the default SQLite database provider.
-    /// This is only used when <see cref="ConfigureDbContext"/> is not set.
+    /// This is only used when ConfigureDbContext is not set.
     /// </summary>
     public string ConnectionString { get; set; } = "DataSource=yarpad.db";
 

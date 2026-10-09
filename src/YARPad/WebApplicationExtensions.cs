@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Builder;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Routing;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
 
 namespace CodingCell.YARPad;
@@ -14,6 +15,10 @@ public static class WebApplicationExtensions
     /// </summary>
     public static void MapYARPad(this WebApplication app)
     {
+        // Catches store state that is changed without Update. Stores created before this start checking from their next update.
+        if (app.Environment.IsDevelopment())
+            StateStoreDiagnostics.DetectMutations = true;
+
         var coordinator = app.Services.GetRequiredService<YarpConfigurationCoordinator>();
         coordinator.Initialize();
 

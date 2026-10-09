@@ -16,13 +16,13 @@ public interface IYARPadConfigurationProvider
     Task UpdateConfigurationAsync(Guid configurationID, string name, string? description);
     Task DeleteConfigurationAsync(Guid configurationID);
 
-    Task SaveClusterAsync(Guid configurationID, YARPadConfiguration configuration, string? clusterID, ClusterModel clusterModel);
-    Task DeleteClusterAsync(Guid configurationID, YARPadConfiguration configuration, ClusterModel clusterModel);
-    Task SaveRouteAsync(Guid configurationID, YARPadConfiguration configuration, string? routeID, RouteModel routeModel, string? precedingRouteId);
-    Task DeleteRouteAsync(Guid configurationID, YARPadConfiguration configuration, RouteModel routeModel);
-    Task ToggleRouteAsync(Guid configurationID, YARPadConfiguration configuration, string routeID, bool isEnabled);
-    Task SaveCustomTransformAsync(Guid configurationID, YARPadConfiguration configuration, string? originalType, CustomTransformDefinition definition);
-    Task DeleteCustomTransformAsync(Guid configurationID, YARPadConfiguration configuration, CustomTransformDefinition definition);
-    Task SavePolicyAsync(Guid configurationID, YARPadConfiguration configuration, string? policyID, PolicyInfo policy, PolicyType policyType);
-    Task DeletePolicyAsync(Guid configurationID, YARPadConfiguration configuration, PolicyInfo policy, PolicyType policyType);
+    Task SaveClusterAsync(Guid configurationID, string? clusterID, ClusterModel clusterModel);
+    Task DeleteClusterAsync(Guid configurationID, ClusterModel clusterModel);
+    Task SaveRouteAsync(Guid configurationID, string? routeID, RouteModel routeModel, string? precedingRouteId);
+    Task DeleteRouteAsync(Guid configurationID, RouteModel routeModel);
+    Task ToggleRouteAsync(Guid configurationID, string routeID, bool isEnabled);
+    Task SaveCustomTransformAsync(Guid configurationID, string? originalType, CustomTransformDefinition definition);
+    Task DeleteCustomTransformAsync(Guid configurationID, CustomTransformDefinition definition);
+    Task SavePolicyAsync(Guid configurationID, string? policyID, PolicyInfo policy, PolicyType policyType);
+    Task DeletePolicyAsync(Guid configurationID, PolicyInfo policy, PolicyType policyType);
 }

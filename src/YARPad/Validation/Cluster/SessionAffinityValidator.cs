@@ -9,19 +9,21 @@ public class SessionAffinityValidator : PolicyValidator<SessionAffinityModel>
     {
         RuleFor(x => x.AffinityKeyName)
             .NotEmpty()
-                .When(x => x.Policy != null)
-                .WithMessage("Affinity key name cannot be empty.")
+                .When(x => !string.IsNullOrEmpty(x.Policy))
+                .WithMessage("Affinity key name cannot be empty.");
+
+        RuleFor(x => x.AffinityKeyName)
             .Matches(RegexPatterns.HEADER_COOKIE_NAME)
-                .When(x => x.Policy != null)
+                .When(x => !string.IsNullOrEmpty(x.Policy))
                 .WithMessage("Affinity key name must be a valid header or cookie name.");
 
         RuleFor(x => x.Policy)
             .CustomAsync((policyID, ctx, token) => ValidatePolicyAsync(policyID, ctx, PolicyType.SessionAffinity, token))
-                .When(x => x.Policy != null);
+                .When(x => !string.IsNullOrEmpty(x.Policy));
 
         RuleFor(x => x.FailurePolicy)
             .CustomAsync((policyID, ctx, token) => ValidatePolicyAsync(policyID, ctx, PolicyType.SessionAffinityFailure, token))
-                .When(x => x.FailurePolicy != null);
+                .When(x => !string.IsNullOrEmpty(x.FailurePolicy));
 
         RuleFor(x => x.Cookie)
             .SetValidator(cookieValidator);

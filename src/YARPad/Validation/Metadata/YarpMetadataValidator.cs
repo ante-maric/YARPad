@@ -8,7 +8,9 @@ public class YarpMetadataValidator : MudValidator<YarpMetadata>
     {
         RuleFor(x => x.Key)
             .NotEmpty()
-                .WithMessage("Metadata key cannot be empty.")
+                .WithMessage("Metadata key cannot be empty.");
+
+        RuleFor(x => x.Key)
             .Must(KeyMustBeUnique)
                 .When((metadata, context) => context.RootContextData.ContainsKey(ValidatorContext.Metadata.IS_EDITING))
                 .WithMessage("Metadata key must be unique.");

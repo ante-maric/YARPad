@@ -8,7 +8,9 @@ public class CustomTransformParameterDefinitionValidator : MudValidator<CustomTr
     {
         RuleFor(x => x.Name)
             .NotEmpty()
-                .WithMessage("Parameter name is required.")
+                .WithMessage("Parameter name is required.");
+
+        RuleFor(x => x.Name)
             .Must(NameMustBeUnique)
                 .When((transform, context) => context.RootContextData.ContainsKey(ValidatorContext.CustomTransform.IS_EDITING_PARAMETER))
                 .WithMessage("Parameter name must be unique within the transform.");

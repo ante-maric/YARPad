@@ -14,7 +14,9 @@ public class RouteHeaderValidator : MudValidator<RouteHeaderModel>
         RuleFor(x => x.Values)
             .NotEmpty()
                 .When(x => x.Mode is HeaderMatchMode.ExactHeader or HeaderMatchMode.HeaderPrefix or HeaderMatchMode.Contains or HeaderMatchMode.NotContains)
-                .WithMessage("Values cannot be empty for the selected mode.")
+                .WithMessage("Values cannot be empty for the selected mode.");
+
+        RuleFor(x => x.Values)
             .Empty()
                 .When(x => x.Mode is HeaderMatchMode.Exists or HeaderMatchMode.NotExists)
                 .WithMessage("Values must be empty for the selected mode.");

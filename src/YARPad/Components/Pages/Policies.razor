@@ -4,7 +4,7 @@
 @inherits StateComponentBase<CurrentConfigurationProfileState>
 
 @inject IYARPadConfigurationProvider ConfigurationProvider
-@inject IDialogService DialogService
+@inject IPolicyEditorService PolicyEditorService
 @inject IUnifiedPolicyProvider PolicyProvider
 
 <div style="max-width:900px;">
@@ -58,55 +58,39 @@
     private List<PolicyInfo> CustomPolicies { get; set; } = new();
 
     private async Task AddPolicyAsync()
-        => await OpenPolicyEditorAsync(new PolicyInfo() { ID = "", Name = "" }, Type);
+    {
+        if (State.SelectedProfile == null || Type == null)
+            return;
+
+        if (await PolicyEditorService.CreateAsync(State.SelectedProfile.ID, Type.Value))
+            await LoadPoliciesAsync();
+    }
 
     private async Task EditPolicyAsync(PolicyInfo policy)
-        => await OpenPolicyEditorAsync(policy with { }, Type, policy.ID);
+    {
+        if (State.SelectedProfile == null || Type == null)
+            return;
+
+        if (await PolicyEditorService.OpenAsync(State.SelectedProfile.ID, Type.Value, policy.ID))
+            await LoadPoliciesAsync();
+    }
 
     private async Task ClonePolicyAsync(PolicyInfo policy)
     {
-        var clonedPolicy = policy with { ID = policy.ID + " Cloned" };
-        await OpenPolicyEditorAsync(clonedPolicy, Type);
+        if (State.SelectedProfile == null || Type == null)
+            return;
+
+        if (await PolicyEditorService.CloneAsync(State.SelectedProfile.ID, Type.Value, policy.ID))
+            await LoadPoliciesAsync();
     }
 
     private async Task DeletePolicyAsync(PolicyInfo policy)
     {
         if (State.SelectedProfile != null && Type != null && GetUsedBy(policy.ID).Count == 0)
         {
-            await ConfigurationProvider.DeletePolicyAsync(State.SelectedProfile.ID, State.SelectedProfile.Configuration, policy, Type.Value);
+            await ConfigurationProvider.DeletePolicyAsync(State.SelectedProfile.ID, policy, Type.Value);
             await LoadPoliciesAsync();
         }
-    }
-
-    private async Task OpenPolicyEditorAsync(PolicyInfo policy, PolicyType? policyType, string? policyID = null)
-    {
-        if (policyType == null)
-            return;
-
-        var options = new DialogOptions()
-        {
-            MaxWidth = MaxWidth.Medium,
-            FullWidth = true,
-        };
-
-        var parameters = new DialogParameters<PolicyDialog>()
-        {
-            { x => x.PolicyID, policyID },
-            { x => x.PolicyType, policyType.Value },
-            { x => x.Policy, policy },
-        };
-
-        var dialog = await DialogService.ShowAsync<PolicyDialog>(null, parameters, options);
-        var result = await dialog.Result;
-
-        if (result == null || result.Canceled || result.Data is not PolicyInfo savedPolicy)
-            return;
-
-        if (State.SelectedProfile == null)
-            return;
-
-        await ConfigurationProvider.SavePolicyAsync(State.SelectedProfile.ID, State.SelectedProfile.Configuration, policyID, savedPolicy, policyType.Value);
-        await LoadPoliciesAsync();
     }
 
     private List<string> GetUsedBy(string policyID)
@@ -134,10 +118,12 @@
         };
     }
 
-    private async Task LoadPoliciesAsync()
+    private Task LoadPoliciesAsync() => LoadPoliciesAsync(State.SelectedProfile?.ID);
+
+    private async Task LoadPoliciesAsync(Guid? configurationProfileID)
     {
         if (Type != null)
-            CustomPolicies = await PolicyProvider.GetPoliciesAsync(Type.Value, default);
+            CustomPolicies = configurationProfileID is Guid id ? await PolicyProvider.GetPoliciesAsync(id, Type.Value, default) : [];
     }
 
     protected override async Task OnParametersSetAsync()
@@ -153,7 +139,8 @@
 
     protected override async void RefreshState(CurrentConfigurationProfileState state)
     {
-        await LoadPoliciesAsync();
+        // State is only replaced by base.RefreshState below, so load for the new state explicitly.
+        await LoadPoliciesAsync(state.SelectedProfile?.ID);
         base.RefreshState(state);
     }
 }

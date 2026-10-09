@@ -61,7 +61,7 @@ public class YarpConfigProviderTests
     [Fact]
     public async Task UpdateConfigurationAsync_UpdatesCurrentConfig()
     {
-        var profile = CreateProfile(Guid.NewGuid(), "route-2", "cluster-2");
+        var profile = CreateProfile();
         var mappedConfig = CreateConfig("route-2", "cluster-2");
 
         _mapper.Setup(m => m.Map<YarpConfig>(profile.Configuration)).Returns(mappedConfig);
@@ -76,8 +76,8 @@ public class YarpConfigProviderTests
     [Fact]
     public async Task UpdateConfigurationAsync_WhenMappingFails_DoesNotUpdateConfig()
     {
-        var initialProfile = CreateProfile(Guid.NewGuid(), "route-3", "cluster-3");
-        var failingProfile = CreateProfile(Guid.NewGuid(), "route-fail", "cluster-fail");
+        var initialProfile = CreateProfile();
+        var failingProfile = CreateProfile();
         var mappedInitial = CreateConfig("route-3", "cluster-3");
 
         _mapper.Setup(m => m.Map<YarpConfig>(initialProfile.Configuration)).Returns(mappedInitial);
@@ -98,8 +98,8 @@ public class YarpConfigProviderTests
     [Fact]
     public async Task UpdateConfigurationAsync_WhenValidationHasErrors_DoesNotUpdateConfig()
     {
-        var initialProfile = CreateProfile(Guid.NewGuid(), "route-4", "cluster-4");
-        var failingProfile = CreateProfile(Guid.NewGuid(), "route-5", "cluster-5");
+        var initialProfile = CreateProfile();
+        var failingProfile = CreateProfile();
         var mappedInitial = CreateConfig("route-4", "cluster-4");
         var mappedFailing = CreateConfig("route-5", "cluster-5");
 
@@ -125,8 +125,8 @@ public class YarpConfigProviderTests
     [Fact]
     public async Task UpdateConfigurationAsync_WhenValidationThrows_DoesNotUpdateConfig()
     {
-        var initialProfile = CreateProfile(Guid.NewGuid(), "route-6", "cluster-6");
-        var failingProfile = CreateProfile(Guid.NewGuid(), "route-7", "cluster-7");
+        var initialProfile = CreateProfile();
+        var failingProfile = CreateProfile();
         var mappedInitial = CreateConfig("route-6", "cluster-6");
         var mappedFailing = CreateConfig("route-7", "cluster-7");
 
@@ -152,9 +152,9 @@ public class YarpConfigProviderTests
     [Fact]
     public async Task UpdateConfigurationAsync_CoalescesPendingUpdatesWhileRunning()
     {
-        var profile1 = CreateProfile(Guid.NewGuid(), "route-8", "cluster-8");
-        var profile2 = CreateProfile(Guid.NewGuid(), "route-9", "cluster-9");
-        var profile3 = CreateProfile(Guid.NewGuid(), "route-10", "cluster-10");
+        var profile1 = CreateProfile();
+        var profile2 = CreateProfile();
+        var profile3 = CreateProfile();
 
         var mapped1 = CreateConfig("route-8", "cluster-8");
         var mapped2 = CreateConfig("route-9", "cluster-9");
@@ -198,11 +198,167 @@ public class YarpConfigProviderTests
         _mapper.Verify(m => m.Map<YarpConfig>(profile3.Configuration), Times.Once);
     }
 
-    private static ConfigurationProfile CreateProfile(Guid id, string routeId, string clusterId)
+    [Fact]
+    public async Task GetConfig_WhenNoActiveConfigurationExists_KeepsEmptyConfig()
+    {
+        var inactiveEntity = new YARPadConfigurationEntity
+        {
+            ID = Guid.NewGuid(),
+            Name = "Inactive",
+            ConfigurationJson = "{}",
+            IsActive = false
+        };
+        var loaded = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+
+        _configurationProvider.Setup(p => p.GetConfigurationsAsync())
+            .ReturnsAsync([inactiveEntity])
+            .Callback(() => loaded.TrySetResult());
+
+        using var provider = new YarpConfigProvider(_configurationProvider.Object, _mapper.Object, _validator.Object, _logger.Object);
+
+        var config = provider.GetConfig();
+        await loaded.Task.WaitAsync(TimeSpan.FromSeconds(5), TestContext.Current.CancellationToken);
+
+        provider.GetConfig().ShouldBeSameAs(config);
+        config.Routes.ShouldBeEmpty();
+        config.Clusters.ShouldBeEmpty();
+        _mapper.Verify(m => m.Map<YarpConfig>(It.IsAny<YARPadConfiguration>()), Times.Never);
+    }
+
+    [Fact]
+    public async Task UpdateConfigurationAsync_SignalsChangeOnPreviousConfig()
+    {
+        var initialProfile = CreateProfile();
+        var nextProfile = CreateProfile();
+        var mappedInitial = CreateConfig("route-11", "cluster-11");
+        var mappedNext = CreateConfig("route-12", "cluster-12");
+
+        _mapper.Setup(m => m.Map<YarpConfig>(initialProfile.Configuration)).Returns(mappedInitial);
+        _mapper.Setup(m => m.Map<YarpConfig>(nextProfile.Configuration)).Returns(mappedNext);
+
+        using var provider = new YarpConfigProvider(_configurationProvider.Object, _mapper.Object, _validator.Object, _logger.Object);
+
+        await provider.UpdateConfigurationAsync(initialProfile);
+        await WaitForConditionAsync(() => ReferenceEquals(provider.GetConfig(), mappedInitial));
+        mappedInitial.ChangeToken.HasChanged.ShouldBeFalse();
+
+        await provider.UpdateConfigurationAsync(nextProfile);
+        await WaitForConditionAsync(() => ReferenceEquals(provider.GetConfig(), mappedNext));
+
+        mappedInitial.ChangeToken.HasChanged.ShouldBeTrue();
+        mappedNext.ChangeToken.HasChanged.ShouldBeFalse();
+    }
+
+    [Fact]
+    public async Task UpdateConfigurationAsync_WhenApplied_RaisesLoadingAndThenAppliedOnGetConfig()
+    {
+        var profile = CreateProfile();
+        var mappedConfig = CreateConfig("route-13", "cluster-13");
+        _mapper.Setup(m => m.Map<YarpConfig>(profile.Configuration)).Returns(mappedConfig);
+
+        using var provider = new YarpConfigProvider(_configurationProvider.Object, _mapper.Object, _validator.Object, _logger.Object);
+        var statusChanges = CaptureStatusChanges(provider);
+
+        await provider.UpdateConfigurationAsync(profile);
+        await WaitForConditionAsync(() => ReferenceEquals(provider.GetConfig(), mappedConfig));
+
+        lock (statusChanges)
+        {
+            statusChanges.First().ShouldBe(new StatusChange(profile.ID, YARPadConfigurationStatus.Loading, null));
+            statusChanges.Last().ShouldBe(new StatusChange(profile.ID, YARPadConfigurationStatus.Applied, null));
+            statusChanges.ShouldNotContain(x => x.Status == YARPadConfigurationStatus.Invalid || x.Status == YARPadConfigurationStatus.RevertedToPrevious);
+        }
+    }
+
+    [Fact]
+    public async Task UpdateConfigurationAsync_WhenInitialConfigIsInvalid_RaisesInvalidWithErrors()
+    {
+        var profile = CreateProfile();
+        var mappedConfig = CreateConfig("route-14", "cluster-14");
+        _mapper.Setup(m => m.Map<YarpConfig>(profile.Configuration)).Returns(mappedConfig);
+        _validator.Setup(v => v.ValidateClusterAsync(It.IsAny<ClusterConfig>()))
+            .ReturnsAsync([new InvalidOperationException("first"), new InvalidOperationException("second")]);
+
+        using var provider = new YarpConfigProvider(_configurationProvider.Object, _mapper.Object, _validator.Object, _logger.Object);
+        var statusChanges = CaptureStatusChanges(provider);
+
+        await provider.UpdateConfigurationAsync(profile);
+        await WaitForConditionAsync(() => HasStatus(statusChanges, YARPadConfigurationStatus.Invalid));
+
+        var invalid = GetStatus(statusChanges, YARPadConfigurationStatus.Invalid);
+        invalid.ID.ShouldBe(profile.ID);
+        var error = invalid.Errors.ShouldNotBeNull().ShouldHaveSingleItem();
+        error.Section.ShouldBe(YarpConfigurationSection.Cluster);
+        error.EntityID.ShouldBe("cluster-14");
+        error.Errors.ShouldBe(["first", "second"]);
+        provider.GetConfig().ShouldNotBeSameAs(mappedConfig);
+        VerifyLog(_logger, LogLevel.Warning, "YARP cluster validation error", Times.Exactly(2));
+    }
+
+    [Fact]
+    public async Task UpdateConfigurationAsync_WhenSubsequentConfigIsInvalid_RaisesRevertedToPrevious()
+    {
+        var initialProfile = CreateProfile();
+        var failingProfile = CreateProfile();
+        var mappedInitial = CreateConfig("route-15", "cluster-15");
+        var mappedFailing = CreateConfig("route-16", "cluster-16");
+
+        _mapper.Setup(m => m.Map<YarpConfig>(initialProfile.Configuration)).Returns(mappedInitial);
+        _mapper.Setup(m => m.Map<YarpConfig>(failingProfile.Configuration)).Returns(mappedFailing);
+        _validator.SetupSequence(v => v.ValidateClusterAsync(It.IsAny<ClusterConfig>()))
+            .ReturnsAsync([])
+            .ThrowsAsync(new InvalidOperationException("validation failed"));
+
+        using var provider = new YarpConfigProvider(_configurationProvider.Object, _mapper.Object, _validator.Object, _logger.Object);
+        var statusChanges = CaptureStatusChanges(provider);
+
+        await provider.UpdateConfigurationAsync(initialProfile);
+        await WaitForConditionAsync(() => ReferenceEquals(provider.GetConfig(), mappedInitial));
+
+        await provider.UpdateConfigurationAsync(failingProfile);
+        await WaitForConditionAsync(() => HasStatus(statusChanges, YARPadConfigurationStatus.RevertedToPrevious));
+
+        var reverted = GetStatus(statusChanges, YARPadConfigurationStatus.RevertedToPrevious);
+        reverted.ID.ShouldBe(failingProfile.ID);
+        var error = reverted.Errors.ShouldNotBeNull().ShouldHaveSingleItem();
+        error.Section.ShouldBe(YarpConfigurationSection.Cluster);
+        error.EntityID.ShouldBe("cluster-16");
+        error.Errors.ShouldBe(["Failed to validate cluster."]);
+        provider.GetConfig().ShouldBeSameAs(mappedInitial);
+        VerifyLog(_logger, LogLevel.Error, "Failed to validate YARP cluster", Times.Once());
+    }
+
+    private static List<StatusChange> CaptureStatusChanges(YarpConfigProvider provider)
+    {
+        var statusChanges = new List<StatusChange>();
+        provider.ConfigStatusChanged += (id, status, errors) =>
+        {
+            lock (statusChanges)
+                statusChanges.Add(new(id, status, errors));
+        };
+
+        return statusChanges;
+    }
+
+    private static bool HasStatus(List<StatusChange> statusChanges, YARPadConfigurationStatus status)
+    {
+        lock (statusChanges)
+            return statusChanges.Any(x => x.Status == status);
+    }
+
+    private static StatusChange GetStatus(List<StatusChange> statusChanges, YARPadConfigurationStatus status)
+    {
+        lock (statusChanges)
+            return statusChanges.Single(x => x.Status == status);
+    }
+
+    private sealed record StatusChange(Guid ID, YARPadConfigurationStatus Status, List<YarpValidationErrors>? Errors);
+
+    private static ConfigurationProfile CreateProfile()
     {
         return new ConfigurationProfile
         {
-            ID = id,
+            ID = Guid.NewGuid(),
             Name = "Test Profile",
             Configuration = new YARPadConfiguration()
         };

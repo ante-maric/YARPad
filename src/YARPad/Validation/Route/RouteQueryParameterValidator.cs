@@ -14,7 +14,9 @@ public class RouteQueryParameterValidator : MudValidator<RouteQueryParameterMode
         RuleFor(x => x.Values)
             .NotEmpty()
                 .When(x => x.Mode is QueryParameterMatchMode.Exact or QueryParameterMatchMode.Prefix or QueryParameterMatchMode.Contains or QueryParameterMatchMode.NotContains)
-                .WithMessage("Values cannot be empty for the selected mode.")
+                .WithMessage("Values cannot be empty for the selected mode.");
+
+        RuleFor(x => x.Values)
             .Empty()
                 .When(x => x.Mode is QueryParameterMatchMode.Exists)
                 .WithMessage("Values must be empty for the selected mode.");

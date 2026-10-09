@@ -1,4 +1,5 @@
-﻿@inject DestinationValidator Validator
+﻿@implements IDisposable
+@inject DestinationValidator Validator
 
 <MudDialog Class="sticky-header-dialog border mud-border-primary-darken">
     <TitleContent>
@@ -6,7 +7,7 @@
     </TitleContent>
 
     <DialogContent>
-        <MudForm @ref="_form" Model="@Destination" Validation="_validationHandler.ValidateAsync">
+        <MudForm @ref="_form" Model="@Destination" Validation="_validationHandler?.Validation">
             <MudStack Spacing="2">
                 <MudTextField
                     Label="Identifier"
@@ -56,11 +57,13 @@
                 </CascadingValue>
             </MudStack>
         </MudForm>
+
+        <ValidationErrorList Errors="@(_validationHandler?.UnclaimedErrors ?? [])" />
     </DialogContent>
 
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="@ColorResolver.Buttons.Save" OnClick="Save">Save</MudButton>
+        <MudButton Color="@ColorResolver.Buttons.Save" OnClick="Save" Disabled="@(_validationHandler?.IsValidating == true)">Save</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -87,12 +90,11 @@
         if (_validationHandler == null || _form == null)
             return;
 
-        await _validationHandler.ExecuteValidationAsync(() => _form.ValidateAsync());
+        var isValid = await _validationHandler.ValidateAsync(Destination, () => _form.ValidateAsync(), () => _form.IsValid);
 
-        if (!_form.IsValid)
-            return;
-
-        MudDialog.Close(DialogResult.Ok(Destination));
+        // Close outside the handler's gate: closing disposes this component (and the handler).
+        if (isValid)
+            MudDialog.Close(DialogResult.Ok(Destination));
     }
 
     private void Cancel() => MudDialog.Cancel();
@@ -108,8 +110,10 @@
     {
         base.OnParametersSet();
 
-        Validator.ContextData[ValidatorContext.Cluster.IS_EDITING_DESTINATION] = true;
-        Validator.ContextData[ValidatorContext.Destination.ORIGINAL_ID] = DestinationID;
-        Validator.ContextData[ValidatorContext.Cluster.MODEL] = Cluster;
+        var contextData = ValidatorContextData.CreateDestination(DestinationID, Cluster);
+
+        _validationHandler?.SetContextData(contextData);
     }
+
+    void IDisposable.Dispose() => _validationHandler?.Dispose();
 }

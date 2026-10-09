@@ -8,7 +8,7 @@
 		<RequiresAspNetWebAssets>true</RequiresAspNetWebAssets>
 		<RootNamespace>CodingCell.YARPad.Proxy</RootNamespace>
 		<InvariantGlobalization>true</InvariantGlobalization>
-    <Version>0.19.1</Version>
+    <Version>0.20.5</Version>
   </PropertyGroup>
 
   <ItemGroup>

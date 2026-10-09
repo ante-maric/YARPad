@@ -1,5 +1,6 @@
 @using Yarp.ReverseProxy.Configuration
 
+@implements IDisposable
 @inject RouteHeaderValidator Validator
 
 <MudDialog Class="border mud-border-primary-darken">
@@ -8,7 +9,7 @@
     </TitleContent>
 
     <DialogContent>
-        <MudForm @ref="_form" Model="@Header" Validation="@_validationHandler.ValidateAsync">
+        <MudForm @ref="_form" Model="@Header" Validation="@_validationHandler?.Validation">
             <MudStack Spacing="2">
 
                 <MudStack Row="true" Spacing="2" AlignItems="AlignItems.Center">
@@ -71,11 +72,13 @@
                               OnKeyDown="OnNewValueKeyDown" />
             </MudStack>
         </MudForm>
+
+        <ValidationErrorList Errors="@(_validationHandler?.UnclaimedErrors ?? [])" />
     </DialogContent>
 
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="@ColorResolver.Buttons.Save" OnClick="Save">Save</MudButton>
+        <MudButton Color="@ColorResolver.Buttons.Save" OnClick="Save" Disabled="@(_validationHandler?.IsValidating == true)">Save</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -112,9 +115,7 @@
         if (_validationHandler == null || _form == null)
             return;
 
-        await _validationHandler.ExecuteValidationAsync(() => _form.ValidateAsync());
-
-        if (!_form.IsValid)
+        if (!await _validationHandler.ValidateAsync(Header, () => _form.ValidateAsync(), () => _form.IsValid))
             return;
 
         MudDialog.Close(DialogResult.Ok(Header));
@@ -128,4 +129,6 @@
 
         _validationHandler = new(Validator);
     }
+
+    void IDisposable.Dispose() => _validationHandler?.Dispose();
 }

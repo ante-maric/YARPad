@@ -1,16 +1,11 @@
-﻿using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
 
 namespace CodingCell.YARPad;
 
-internal sealed class MigrationHostedService(IServiceScopeFactory scopeFactory) : IHostedService
+internal sealed class MigrationHostedService(DatabaseMigrationGate migrationGate) : IHostedService
 {
-    public async Task StartAsync(CancellationToken cancellationToken)
-    {
-        await using var scope = scopeFactory.CreateAsyncScope();
-        var migrationService = scope.ServiceProvider.GetRequiredService<IDatabaseMigrationService>();
-        await migrationService.ApplyMigrationsAsync();
-    }
+    // Migrate eagerly at startup so a failing migration stops the app before it serves requests.
+    public Task StartAsync(CancellationToken cancellationToken) => migrationGate.WaitAsync();
 
     public Task StopAsync(CancellationToken cancellationToken) => Task.CompletedTask;
 }

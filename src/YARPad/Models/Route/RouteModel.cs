@@ -31,12 +31,19 @@ public sealed record RouteModel
     public bool IsEnabled { get; set; } = true;
 
     public Dictionary<RouteConfigSection, RouteConfigSectionSwitch> SectionSwitches { get; set; } = Enum.GetValues<RouteConfigSection>()
-        .Select(x => new RouteConfigSectionSwitch() { Section = x, IsEnabled = x == RouteConfigSection.General && x == RouteConfigSection.Match })
+        .Select(x => new RouteConfigSectionSwitch() { Section = x, IsEnabled = x == RouteConfigSection.General || x == RouteConfigSection.Match })
         .ToDictionary(x => x.Section);
 
     public IEnumerable<RouteConfigSectionSwitch> OptionalSectionSwitches => SectionSwitches.Values
         .Where(x => x.Section != RouteConfigSection.General && x.Section != RouteConfigSection.Match)
         .OrderBy(x => x.Section);
+
+    // General and Match are mandatory sections and are always enabled. Don't trust their stored switch:
+    // routes saved before the SectionSwitches default was fixed (it used && instead of ||) have
+    // IsEnabled = false persisted for both, and that data has not been migrated.
+    public bool IsSectionEnabled(RouteConfigSection section) =>
+        section is RouteConfigSection.General or RouteConfigSection.Match
+        || (SectionSwitches.TryGetValue(section, out var sectionSwitch) && sectionSwitch.IsEnabled);
 
     public RouteModel DeepClone()
     {

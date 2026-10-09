@@ -10,6 +10,6 @@ public class PassiveHealthCheckValidator : PolicyValidator<PassiveHealthCheckMod
 
         RuleFor(x => x.Policy)
             .CustomAsync((policyID, ctx, token) => ValidatePolicyAsync(policyID, ctx, PolicyType.PassiveHealthCheck, token))
-                .When(x => x.Policy != null);
+                .When(x => !string.IsNullOrEmpty(x.Policy));
     }
 }

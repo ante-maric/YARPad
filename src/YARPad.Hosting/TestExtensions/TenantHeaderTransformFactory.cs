@@ -6,16 +6,16 @@ namespace CodingCell.YARPad.Hosting.TestExtensions;
 
 public class TenantHeaderTransformFactory : ITransformFactory
 {
-    private const string TransformName = "TenantHeader";     // key in config
-    private const string RouteParamKey = "TenantRouteParam"; // key in config
-    private const string HeaderName = "X-Tenant";            // header we will set
+    private const string TRANSFORM_NAME = "TenantHeader";     // key in config
+    private const string ROUTE_PARAM_KEY = "TenantRouteParam"; // key in config
+    private const string HEADER_NAME = "X-Tenant";            // header we will set
 
     public bool Validate(
         TransformRouteValidationContext context,
         IReadOnlyDictionary<string, string> transformValues)
     {
         // Check if this transform applies
-        if (!transformValues.TryGetValue(TransformName, out var enabledValue))
+        if (!transformValues.TryGetValue(TRANSFORM_NAME, out var enabledValue))
         {
             return false; // not ours
         }
@@ -24,15 +24,15 @@ public class TenantHeaderTransformFactory : ITransformFactory
         if (!string.Equals(enabledValue, "true", StringComparison.OrdinalIgnoreCase))
         {
             context.Errors.Add(new ArgumentException(
-                $"{TransformName} must be 'true' when specified."));
+                $"{TRANSFORM_NAME} must be 'true' when specified."));
         }
 
         // Require TenantRouteParam
-        if (!transformValues.TryGetValue(RouteParamKey, out var routeParamName) ||
+        if (!transformValues.TryGetValue(ROUTE_PARAM_KEY, out var routeParamName) ||
             string.IsNullOrWhiteSpace(routeParamName))
         {
             context.Errors.Add(new ArgumentException(
-                $"{RouteParamKey} is required and must be non-empty for {TransformName}."));
+                $"{ROUTE_PARAM_KEY} is required and must be non-empty for {TRANSFORM_NAME}."));
         }
 
         return true; // we matched this transform dictionary
@@ -43,17 +43,17 @@ public class TenantHeaderTransformFactory : ITransformFactory
         IReadOnlyDictionary<string, string> transformValues)
     {
         // Same matching logic as Validate
-        if (!transformValues.TryGetValue(TransformName, out var enabledValue) ||
+        if (!transformValues.TryGetValue(TRANSFORM_NAME, out var enabledValue) ||
             !string.Equals(enabledValue, "true", StringComparison.OrdinalIgnoreCase))
         {
             return false;
         }
 
-        if (!transformValues.TryGetValue(RouteParamKey, out var routeParamName) ||
+        if (!transformValues.TryGetValue(ROUTE_PARAM_KEY, out var routeParamName) ||
             string.IsNullOrWhiteSpace(routeParamName))
         {
             throw new ArgumentException(
-                $"{RouteParamKey} is required and must be non-empty for {TransformName}.");
+                $"{ROUTE_PARAM_KEY} is required and must be non-empty for {TRANSFORM_NAME}.");
         }
 
         // Add the actual request transform
@@ -68,8 +68,8 @@ public class TenantHeaderTransformFactory : ITransformFactory
                 if (!string.IsNullOrEmpty(tenantValue))
                 {
                     // Ensure we don't accumulate multiple headers
-                    transformContext.ProxyRequest.Headers.Remove(HeaderName);
-                    transformContext.ProxyRequest.Headers.Add(HeaderName, tenantValue);
+                    transformContext.ProxyRequest.Headers.Remove(HEADER_NAME);
+                    transformContext.ProxyRequest.Headers.Add(HEADER_NAME, tenantValue);
                 }
             }
 

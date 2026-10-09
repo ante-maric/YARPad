@@ -8,7 +8,7 @@ public class SessionAffinityCookieValidator : MudValidator<SessionAffinityCookie
     {
         RuleFor(x => x.Domain)
             .Matches(RegexPatterns.DOMAIN)
-                .When(x => x.Domain != null)
+                .When(x => !string.IsNullOrEmpty(x.Domain))
                 .WithMessage("Domain must be a valid domain name.");
 
         RuleFor(x => x.SecurePolicy)

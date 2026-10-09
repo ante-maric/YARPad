@@ -9,7 +9,7 @@ public class HealthCheckValidator : PolicyValidator<HealthCheckModel>
     {
         RuleFor(x => x.AvailableDestinationsPolicy)
             .CustomAsync((policyID, ctx, token) => ValidatePolicyAsync(policyID, ctx, PolicyType.AvailableDestination, token))
-                .When(x => x.AvailableDestinationsPolicy != null);
+                .When(x => !string.IsNullOrEmpty(x.AvailableDestinationsPolicy));
         
         RuleFor(x => x.Active)
             .SetValidator(activeValidator);
