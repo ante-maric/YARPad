@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 
-namespace CodingCell.YARPad.Components.Common;
+namespace CodingCell.ReactiveStore.Components;
 
 public class StateLayoutComponentBase<TState> : LayoutComponentBase, IDisposable
 {

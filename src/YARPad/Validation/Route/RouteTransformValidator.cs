@@ -72,12 +72,12 @@ public class RequestHeaderTransformValidator : MudValidator<RequestHeaderTransfo
 
         RuleFor(x => x.Set)
             .NotEmpty()
-                .When(x => !x.Remove && string.IsNullOrEmpty(x.Append))
+                .When(x => !x.Remove && SetOrAppendRules.IsSetRequired(x.Set, x.Append))
                 .WithMessage("Header value is required.");
 
         RuleFor(x => x.Append)
             .NotEmpty()
-                .When(x => !x.Remove && string.IsNullOrEmpty(x.Set))
+                .When(x => !x.Remove && SetOrAppendRules.IsAppendRequired(x.Set, x.Append))
                 .WithMessage("Header value is required.");
     }
 }
@@ -122,12 +122,12 @@ public class QueryRouteParameterTransformValidator : MudValidator<QueryRoutePara
 
         RuleFor(x => x.Set)
             .NotEmpty()
-                .When(x => string.IsNullOrEmpty(x.Append))
+                .When(x => SetOrAppendRules.IsSetRequired(x.Set, x.Append))
                 .WithMessage("Route Parameter is required.");
 
         RuleFor(x => x.Append)
             .NotEmpty()
-                .When(x => string.IsNullOrEmpty(x.Set))
+                .When(x => SetOrAppendRules.IsAppendRequired(x.Set, x.Append))
                 .WithMessage("Route Parameter is required.");
     }
 }
@@ -154,12 +154,12 @@ public class QueryValueParameterTransformValidator : MudValidator<QueryValuePara
 
         RuleFor(x => x.Set)
             .NotEmpty()
-                .When(x => string.IsNullOrEmpty(x.Append))
+                .When(x => SetOrAppendRules.IsSetRequired(x.Set, x.Append))
                 .WithMessage("Query Parameter value is required.");
 
         RuleFor(x => x.Append)
             .NotEmpty()
-                .When(x => string.IsNullOrEmpty(x.Set))
+                .When(x => SetOrAppendRules.IsAppendRequired(x.Set, x.Append))
                 .WithMessage("Query Parameter value is required.");
     }
 }
@@ -198,12 +198,12 @@ public class RequestHeaderRouteValueTransformValidator : MudValidator<RequestHea
 
         RuleFor(x => x.Set)
             .NotEmpty()
-                .When(x => string.IsNullOrEmpty(x.Append))
+                .When(x => SetOrAppendRules.IsSetRequired(x.Set, x.Append))
                 .WithMessage("Route value is required.");
 
         RuleFor(x => x.Append)
             .NotEmpty()
-                .When(x => string.IsNullOrEmpty(x.Set))
+                .When(x => SetOrAppendRules.IsAppendRequired(x.Set, x.Append))
                 .WithMessage("Route value is required.");
     }
 }
@@ -298,12 +298,12 @@ public class ResponseHeaderTransformValidator : MudValidator<ResponseHeaderTrans
 
         RuleFor(x => x.Set)
             .NotEmpty()
-                .When(x => string.IsNullOrEmpty(x.Append))
+                .When(x => SetOrAppendRules.IsSetRequired(x.Set, x.Append))
                 .WithMessage("Header value is required.");
 
         RuleFor(x => x.Append)
             .NotEmpty()
-                .When(x => string.IsNullOrEmpty(x.Set))
+                .When(x => SetOrAppendRules.IsAppendRequired(x.Set, x.Append))
                 .WithMessage("Header value is required.");
     }
 }
@@ -353,12 +353,12 @@ public class ResponseTrailerTransformValidator : MudValidator<ResponseTrailerTra
 
         RuleFor(x => x.Set)
             .NotEmpty()
-                .When(x => string.IsNullOrEmpty(x.Append))
+                .When(x => SetOrAppendRules.IsSetRequired(x.Set, x.Append))
                 .WithMessage("Trailer value is required.");
 
         RuleFor(x => x.Append)
             .NotEmpty()
-                .When(x => string.IsNullOrEmpty(x.Set))
+                .When(x => SetOrAppendRules.IsAppendRequired(x.Set, x.Append))
                     .WithMessage("Trailer value is required.");
     }
 }
@@ -400,13 +400,12 @@ public class CustomTransformValidator : MudValidator<CustomTransform>
         _mapper = mapper;
         _serviceProvider = serviceProvider;
 
+        // Custom instead of Must: the failures are added with their own messages, so the rule must not add a generic one.
         RuleFor(x => x)
-            .Must((transform, transform2, context) =>
+            .Custom((transform, context) =>
             {
-                if (!context.RootContextData.TryGetValue(ValidatorContext.Route.MODEL, out var routeObj) || routeObj is not RouteModel route)
-                    return true;
-
-                return CustomTransformsMustBeRegistered(route, transform, context);
+                if (context.RootContextData.TryGetValue(ValidatorContext.Route.MODEL, out var routeObj) && routeObj is RouteModel route)
+                    CustomTransformsMustBeRegistered(route, transform, context);
             });
 
         RuleFor(x => x.Parameters)
@@ -426,8 +425,13 @@ public class CustomTransformValidator : MudValidator<CustomTransform>
         return keys.Distinct().Count() == parameters.Count;
     }
 
-    private bool CustomTransformsMustBeRegistered(RouteModel route, CustomTransform transform, ValidationContext<CustomTransform> context)
+    private void CustomTransformsMustBeRegistered(RouteModel route, CustomTransform transform, ValidationContext<CustomTransform> context)
     {
+        // Duplicate keys are reported by their own rules and cannot be turned into the YARP config validated here.
+        var hasDuplicateMetadataKeys = route.IsSectionEnabled(RouteConfigSection.Metadata) && !HaveUniqueIDs(route.Metadata, x => x.Key);
+        if (hasDuplicateMetadataKeys || !HaveUniqueIDs(transform.Parameters, x => x.Key))
+            return;
+
         var transformValidationContext = new TransformRouteValidationContext
         {
             Route = _mapper.Map<RouteConfig>(route),
@@ -439,7 +443,7 @@ public class CustomTransformValidator : MudValidator<CustomTransform>
         if (!_transformFactories.Any(f => f.Validate(transformValidationContext, transformValues!)))
         {
             context.AddFailure($"{transform.TransformType} is not properly registered (ITransformFactory) in DI container.");
-            return false;
+            return;
         }
 
         var isEditing = context.RootContextData.ContainsKey(ValidatorContext.CustomTransform.IS_EDITING);
@@ -450,8 +454,6 @@ public class CustomTransformValidator : MudValidator<CustomTransform>
             else
                 context.AddFailure($"[{transform.TransformType}] {error.Message}");
         }
-
-        return transformValidationContext.Errors.Count == 0;
     }
 }
 
@@ -463,4 +465,16 @@ public class CustomTransformParameterValidator : MudValidator<CustomTransformPar
             .NotEmpty()
                 .WithMessage("Parameter key is required.");
     }
+}
+
+// One of Set/Append is required. The editors keep the unused one null, so only the one in use
+// reports the missing value instead of both reporting the same error. Set reports when neither
+// is in use, and also when both are empty strings (data that did not come through the editor).
+internal static class SetOrAppendRules
+{
+    public static bool IsSetRequired(string? set, string? append) =>
+        string.IsNullOrEmpty(append) && (set != null || append == null);
+
+    public static bool IsAppendRequired(string? set, string? append) =>
+        set == null && append != null;
 }

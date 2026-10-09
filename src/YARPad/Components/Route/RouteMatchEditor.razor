@@ -77,61 +77,63 @@
             }
             else
             {
-                <MudSimpleTable Class="overflow-x-auto" Bordered="true" Outlined="true" Dense="true">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Mode</th>
-                            <th>Case Sensitive</th>
-                            <th>Values</th>
-                            <th style="width:1%; white-space:nowrap; text-align:center;" />
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var header in Match.Headers)
-                        {
+                <CustomInput T="List<RouteHeaderModel>" For="@(() => Route.Match.Headers)">
+                    <MudSimpleTable Class="overflow-x-auto" Bordered="true" Outlined="true" Dense="true">
+                        <thead>
                             <tr>
-                                <td>
-                                    <MudText>@header.Name</MudText>
-                                </td>
-                                <td>
-                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
-                                        <MudIcon Icon="@header.Mode.ToIcon()" Class="@header.Mode.ToColorClass()" />
-                                        <span>@header.Mode.HumanizeEnum()</span>
-                                    </MudStack>
-                                </td>
-                                <td>
-                                    <MudText>@(header.IsCaseSensitive ? "Yes" : "No")</MudText>
-                                </td>
-                                <td>
-                                    <MudStack Row="true" Spacing="1">
-                                        @if (header.Values.Count == 0)
-                                        {
-                                            <MudText Color="@ColorResolver.Symbol.HeaderValue">Any</MudText>
-                                        }
-                                        else
-                                        {
-                                            @foreach (var value in header.Values)
-                                            {
-                                                <MudChip Value="@value"
-                                                         Color="@ColorResolver.Symbol.HeaderValue"
-                                                         Variant="Variant.Outlined"
-                                                         Size="Size.Small"
-                                                         Ripple="false" />
-                                            }
-                                        }
-                                    </MudStack>
-                                </td>
-                                <td>
-                                    <MudStack Row="true" Spacing="2" Justify="Justify.Center">
-                                        <MudIconButton Icon="@IconResolver.Buttons.Edit" Color="@ColorResolver.Buttons.Edit" Size="Size.Small" OnClick="@(() => EditHeaderAsync(header))" />
-                                        <MudIconButton Icon="@IconResolver.Buttons.Delete" Color="@ColorResolver.Buttons.Delete" Size="Size.Small" OnClick="@(() => RemoveHeader(header))" />
-                                    </MudStack>
-                                </td>
+                                <th>Name</th>
+                                <th>Mode</th>
+                                <th>Case Sensitive</th>
+                                <th>Values</th>
+                                <th style="width:1%; white-space:nowrap; text-align:center;" />
                             </tr>
-                        }
-                    </tbody>
-                </MudSimpleTable>
+                        </thead>
+                        <tbody>
+                            @foreach (var header in Match.Headers)
+                            {
+                                <tr>
+                                    <td>
+                                        <MudText>@header.Name</MudText>
+                                    </td>
+                                    <td>
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                                            <MudIcon Icon="@header.Mode.ToIcon()" Class="@header.Mode.ToColorClass()" />
+                                            <span>@header.Mode.HumanizeEnum()</span>
+                                        </MudStack>
+                                    </td>
+                                    <td>
+                                        <MudText>@(header.IsCaseSensitive ? "Yes" : "No")</MudText>
+                                    </td>
+                                    <td>
+                                        <MudStack Row="true" Spacing="1">
+                                            @if (header.Values.Count == 0)
+                                            {
+                                                <MudText Color="@ColorResolver.Symbol.HeaderValue">Any</MudText>
+                                            }
+                                            else
+                                            {
+                                                @foreach (var value in header.Values)
+                                                {
+                                                    <MudChip Value="@value"
+                                                             Color="@ColorResolver.Symbol.HeaderValue"
+                                                             Variant="Variant.Outlined"
+                                                             Size="Size.Small"
+                                                             Ripple="false" />
+                                                }
+                                            }
+                                        </MudStack>
+                                    </td>
+                                    <td>
+                                        <MudStack Row="true" Spacing="2" Justify="Justify.Center">
+                                            <MudIconButton Icon="@IconResolver.Buttons.Edit" Color="@ColorResolver.Buttons.Edit" Size="Size.Small" OnClick="@(() => EditHeaderAsync(header))" />
+                                            <MudIconButton Icon="@IconResolver.Buttons.Delete" Color="@ColorResolver.Buttons.Delete" Size="Size.Small" OnClick="@(() => RemoveHeader(header))" />
+                                        </MudStack>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                </CustomInput>
             }
         </MudCardContent>
     </MudCard>
@@ -154,61 +156,63 @@
             }
             else
             {
-                <MudSimpleTable Class="overflow-x-auto" Bordered="true" Outlined="true" Dense="true">
-                    <thead>
-                        <tr>
-                            <th>Name</th>
-                            <th>Mode</th>
-                            <th>Case Sensitive</th>
-                            <th>Values</th>
-                            <th style="width:1%; white-space:nowrap; text-align:center;" />
-                        </tr>
-                    </thead>
-                    <tbody>
-                        @foreach (var queryParam in Match.QueryParameters)
-                        {
+                <CustomInput T="List<RouteQueryParameterModel>" For="@(() => Route.Match.QueryParameters)">
+                    <MudSimpleTable Class="overflow-x-auto" Bordered="true" Outlined="true" Dense="true">
+                        <thead>
                             <tr>
-                                <td>
-                                    <MudText>@queryParam.Name</MudText>
-                                </td>
-                                <td>
-                                    <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
-                                        <MudIcon Icon="@queryParam.Mode.ToIcon()" Class="@queryParam.Mode.ToColorClass()" />
-                                        <span>@queryParam.Mode.HumanizeEnum()</span>
-                                    </MudStack>
-                                </td>
-                                <td>
-                                    <MudText>@(queryParam.IsCaseSensitive ? "Yes" : "No")</MudText>
-                                </td>
-                                <td>
-                                    <MudStack Row="true" Spacing="2" Justify="Justify.Center">
-                                        @if (queryParam.Values.Count == 0)
-                                        {
-                                            <MudText Color="@ColorResolver.Symbol.HeaderValue">Any</MudText>
-                                        }
-                                        else
-                                        {
-                                            @foreach (var value in queryParam.Values)
-                                            {
-                                                <MudChip Value="@value"
-                                                         Color="@ColorResolver.Symbol.HeaderValue"
-                                                         Variant="Variant.Outlined"
-                                                         Size="Size.Small"
-                                                         Ripple="false" />
-                                            }
-                                        }
-                                    </MudStack>
-                                </td>
-                                <td>
-                                    <MudStack Row="true" Spacing="2">
-                                        <MudIconButton Icon="@IconResolver.Buttons.Edit" Color="@ColorResolver.Buttons.Edit" Size="Size.Small" OnClick="@(() => EditQueryParameterAsync(queryParam))" />
-                                        <MudIconButton Icon="@IconResolver.Buttons.Delete" Color="@ColorResolver.Buttons.Delete" Size="Size.Small" OnClick="@(() => RemoveQueryParameter(queryParam))" />
-                                    </MudStack>
-                                </td>
+                                <th>Name</th>
+                                <th>Mode</th>
+                                <th>Case Sensitive</th>
+                                <th>Values</th>
+                                <th style="width:1%; white-space:nowrap; text-align:center;" />
                             </tr>
-                        }
-                    </tbody>
-                </MudSimpleTable>
+                        </thead>
+                        <tbody>
+                            @foreach (var queryParam in Match.QueryParameters)
+                            {
+                                <tr>
+                                    <td>
+                                        <MudText>@queryParam.Name</MudText>
+                                    </td>
+                                    <td>
+                                        <MudStack Row="true" AlignItems="AlignItems.Center" Spacing="3">
+                                            <MudIcon Icon="@queryParam.Mode.ToIcon()" Class="@queryParam.Mode.ToColorClass()" />
+                                            <span>@queryParam.Mode.HumanizeEnum()</span>
+                                        </MudStack>
+                                    </td>
+                                    <td>
+                                        <MudText>@(queryParam.IsCaseSensitive ? "Yes" : "No")</MudText>
+                                    </td>
+                                    <td>
+                                        <MudStack Row="true" Spacing="2" Justify="Justify.Center">
+                                            @if (queryParam.Values.Count == 0)
+                                            {
+                                                <MudText Color="@ColorResolver.Symbol.HeaderValue">Any</MudText>
+                                            }
+                                            else
+                                            {
+                                                @foreach (var value in queryParam.Values)
+                                                {
+                                                    <MudChip Value="@value"
+                                                             Color="@ColorResolver.Symbol.HeaderValue"
+                                                             Variant="Variant.Outlined"
+                                                             Size="Size.Small"
+                                                             Ripple="false" />
+                                                }
+                                            }
+                                        </MudStack>
+                                    </td>
+                                    <td>
+                                        <MudStack Row="true" Spacing="2">
+                                            <MudIconButton Icon="@IconResolver.Buttons.Edit" Color="@ColorResolver.Buttons.Edit" Size="Size.Small" OnClick="@(() => EditQueryParameterAsync(queryParam))" />
+                                            <MudIconButton Icon="@IconResolver.Buttons.Delete" Color="@ColorResolver.Buttons.Delete" Size="Size.Small" OnClick="@(() => RemoveQueryParameter(queryParam))" />
+                                        </MudStack>
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </MudSimpleTable>
+                </CustomInput>
             }
         </MudCardContent>
     </MudCard>

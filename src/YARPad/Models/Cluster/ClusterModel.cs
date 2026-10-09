@@ -17,6 +17,9 @@ public sealed record ClusterModel
         .Where(x => x.Section != ClusterConfigSection.Destinations)
         .OrderBy(x => x.Section);
 
+    public bool IsSectionEnabled(ClusterConfigSection section) =>
+        SectionSwitches.TryGetValue(section, out var sectionSwitch) && sectionSwitch.IsEnabled;
+
     public SessionAffinityModel SessionAffinity { get; set; } = new() { AffinityKeyName = string.Empty };
 
     public HealthCheckModel HealthCheck { get; set; } = new();

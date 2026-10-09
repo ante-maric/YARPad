@@ -5,17 +5,17 @@ namespace CodingCell.YARPad;
 
 public class RouteValidator : PolicyValidator<RouteModel>
 {
-    private readonly IStoreReader<CurrentConfigurationProfileState> _currentConfigurationStateStore;
+    private readonly IStoreReader<ConfigurationProfileState> _configurationProfileStore;
 
     public RouteValidator(
-        IStoreReader<CurrentConfigurationProfileState> currentConfigurationStateStore,
+        IStoreReader<ConfigurationProfileState> configurationProfileStore,
         RouteTransformValidator routeTransformValidator, 
         RouteMetadataValidator metadataValidator,
         RouteMatchValidator matchValidator,
         IPolicyValidatorFactory policyValidatorFactory)
         : base(policyValidatorFactory)
     {
-        _currentConfigurationStateStore = currentConfigurationStateStore;
+        _configurationProfileStore = configurationProfileStore;
 
         RuleFor(x => x.RouteID)
             .NotEmpty()
@@ -26,9 +26,9 @@ public class RouteValidator : PolicyValidator<RouteModel>
         RuleFor(x => x.ClusterID)
             .NotEmpty()
                 .WithMessage("Cluster ID is required.")
-            .Must((model, clusterId) =>
+            .Must((model, clusterId, context) =>
             {
-                var configuration = _currentConfigurationStateStore.Current.SelectedProfile?.Configuration;
+                var configuration = context.GetConfiguration(_configurationProfileStore);
                 return configuration?.Clusters.Any(x => x.ClusterID == clusterId) == true;
             })
                 .WithMessage("Cluster ID must refer to an existing cluster.");
@@ -51,11 +51,14 @@ public class RouteValidator : PolicyValidator<RouteModel>
         RuleFor(x => x.Match)
             .SetValidator(matchValidator);
 
+        // Disabled sections are not sent to YARP (see AutoMapperProfile), so they are not validated either.
         RuleForEach(x => x.Transforms)
-            .SetValidator(routeTransformValidator);
+            .SetValidator(routeTransformValidator)
+                .When(x => x.IsSectionEnabled(RouteConfigSection.Transform));
 
         RuleFor(x => x.Metadata)
-            .SetValidator(metadataValidator);
+            .SetValidator(metadataValidator)
+                .When(x => x.IsSectionEnabled(RouteConfigSection.Metadata));
     }
 
     protected override bool PreValidate(ValidationContext<RouteModel> context, ValidationResult result)
@@ -67,7 +70,7 @@ public class RouteValidator : PolicyValidator<RouteModel>
 
     private bool RouteIDMustBeUnique(RouteModel route, string routeID, ValidationContext<RouteModel> context)
     {
-        var configuration = _currentConfigurationStateStore.Current.SelectedProfile?.Configuration;
+        var configuration = context.GetConfiguration(_configurationProfileStore);
         var originalRouteID = context.RootContextData.TryGetValue(ValidatorContext.Route.ORIGINAL_ID, out var value) ? value as string : null;
 
         return configuration?.Routes.TrueForAll(x => x.RouteID == originalRouteID || x.RouteID != routeID) == true;

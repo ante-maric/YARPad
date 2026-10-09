@@ -119,7 +119,7 @@
     public required RouteModel Route { get; set; }
 
     [Parameter, EditorRequired]
-    public required List<ClusterModel> Clusters { get; set; }
+    public required IReadOnlyList<ClusterModel> Clusters { get; set; }
 
     [Parameter, EditorRequired]
     public required List<PolicyInfo> AuthorizationPolicies { get; set; }

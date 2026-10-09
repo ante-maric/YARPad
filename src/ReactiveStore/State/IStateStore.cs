@@ -1,11 +1,11 @@
-﻿namespace CodingCell.YARPad;
+namespace CodingCell.ReactiveStore;
 
-public interface IState<TState>
+public interface IState<out TState>
 {
     TState Current { get; }
 }
 
-public interface IStoreReader<TState> : IState<TState>
+public interface IStoreReader<out TState> : IState<TState>
 {
     IObservable<TState> Changes { get; }
 }

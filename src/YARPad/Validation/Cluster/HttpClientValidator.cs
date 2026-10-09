@@ -21,12 +21,12 @@ public class HttpClientValidator : MudValidator<HttpClientModel>
 
         RuleFor(x => x.RequestHeaderEncoding)
             .Must(encoding => ValidateEncoding(encoding!))
-                .When(x => x.RequestHeaderEncoding != null)
+                .When(x => !string.IsNullOrEmpty(x.RequestHeaderEncoding))
                 .WithMessage("Request header encoding is not valid.");
 
         RuleFor(x => x.ResponseHeaderEncoding)
             .Must(encoding => ValidateEncoding(encoding!))
-                .When(x => x.RequestHeaderEncoding != null)
+                .When(x => !string.IsNullOrEmpty(x.ResponseHeaderEncoding))
                 .WithMessage("Response header encoding is not valid.");
     }
 

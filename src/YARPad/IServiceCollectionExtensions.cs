@@ -37,6 +37,8 @@ public static class IServiceCollectionExtensions
         services
             .AddScoped<IClusterEditorService, ClusterEditorService>()
             .AddScoped<IRouteEditorService, RouteEditorService>()
+            .AddScoped<ICustomTransformEditorService, CustomTransformEditorService>()
+            .AddScoped<IPolicyEditorService, PolicyEditorService>()
             .AddSingleton<IYARPadConfigurationProvider, YARPadConfigurationProvider>()
             .AddSingleton<IYarpConfigProvider, YarpConfigProvider>()
             .AddSingleton<IProxyConfigProvider>(sp => sp.GetRequiredService<IYarpConfigProvider>())
@@ -63,12 +65,12 @@ public static class IServiceCollectionExtensions
 
         services.AddAutoMapper((x, y) => { }, typeof(AutoMapperProfile).Assembly);
 
-        services.AddValidatorsFromAssemblyContaining<YARPadConfiguration>();
+        services.AddValidatorsFromAssemblyContaining<YARPadConfiguration>(lifetime: ServiceLifetime.Transient);
 
         services
             .AddStateStore<ConfigurationProfileState, StateStore<ConfigurationProfileState>>(new ConfigurationProfileState([], null))
             .AddStateStore<YarpConfigStatusState, StateStore<YarpConfigStatusState>>(new YarpConfigStatusState(Guid.Empty, YARPadConfigurationStatus.Loading, [], DateTime.UtcNow))
-            .AddStateStore<ThemeState, CookieStateStore<ThemeState>>(new(true), ServiceLifetime.Scoped)
+            .AddStateStore<ThemeState, ThemeCookieStateStore>(new(true), ServiceLifetime.Scoped)
             .AddStateStore<CurrentConfigurationProfileState, StateStore<CurrentConfigurationProfileState>>(new(null), ServiceLifetime.Scoped)
             .AddStateStore<AppInfoState, StateStore<AppInfoState>>(new(version ?? System.Reflection.Assembly.GetExecutingAssembly().GetName().Version), ServiceLifetime.Scoped)
             .AddStateStore<MainState, MainStateStore>(ServiceLifetime.Scoped);
@@ -109,6 +111,7 @@ public static class IServiceCollectionExtensions
 
         services.TryAddSingleton<IEmailSender<ApplicationUser>, IdentityNoOpEmailSender>();
         services.TryAddScoped<IDatabaseMigrationService, BuiltInDatabaseMigrationService>();
+        services.TryAddSingleton<DatabaseMigrationGate>();
         services.AddHostedService<MigrationHostedService>();
         services.AddHostedService<ConfigChangeNotifierHostedService>();
 
@@ -123,35 +126,6 @@ public static class IServiceCollectionExtensions
         services.AddSingleton<INavMenuContributor, ConfigurationNavMenuContributor>();
         services.TryAddSingleton(new RazorAssemblyRegistry());
         services.TryAddScoped<IYARPadExtraFeatures, YARPadNoExtraFeatures>();
-
-        return services;
-    }
-
-    public static IServiceCollection AddStateStore<TState, TStore>(
-        this IServiceCollection services,
-        TState initialState,
-        ServiceLifetime lifetime = ServiceLifetime.Singleton)
-        where TState : class
-        where TStore : class, IStoreReader<TState>, IStoreWriter<TState>, IStateStore<TState>
-    {
-        services.Add(new ServiceDescriptor(typeof(TState), sp => initialState, lifetime));
-        services.Add(new ServiceDescriptor(typeof(TStore), typeof(TStore), lifetime));
-        services.Add(new ServiceDescriptor(typeof(IStoreReader<TState>), sp => sp.GetRequiredService<TStore>(), lifetime));
-        services.Add(new ServiceDescriptor(typeof(IStoreWriter<TState>), sp => sp.GetRequiredService<TStore>(), lifetime));
-        services.Add(new ServiceDescriptor(typeof(IStateStore<TState>), sp => sp.GetRequiredService<TStore>(), lifetime));
-
-        return services;
-    }
-
-    public static IServiceCollection AddStateStore<TState, TStore>(this IServiceCollection services, ServiceLifetime lifetime = ServiceLifetime.Singleton)
-        where TState : class
-        where TStore : class, IStoreReader<TState>, IStoreWriter<TState>, IStateStore<TState>
-    {
-        services.Add(new ServiceDescriptor(typeof(TState), typeof(TState), lifetime));
-        services.Add(new ServiceDescriptor(typeof(TStore), typeof(TStore), lifetime));
-        services.Add(new ServiceDescriptor(typeof(IStoreReader<TState>), sp => sp.GetRequiredService<TStore>(), lifetime));
-        services.Add(new ServiceDescriptor(typeof(IStoreWriter<TState>), sp => sp.GetRequiredService<TStore>(), lifetime));
-        services.Add(new ServiceDescriptor(typeof(IStateStore<TState>), sp => sp.GetRequiredService<TStore>(), lifetime));
 
         return services;
     }

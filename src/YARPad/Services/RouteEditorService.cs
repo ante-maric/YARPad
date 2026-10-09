@@ -10,20 +10,39 @@ internal class RouteEditorService(
     IStateStore<ConfigurationProfileState> stateStore,
     ILogger<RouteEditorService> logger) : IRouteEditorService
 {
+    public Task<bool> CreateAsync(Guid configurationProfileID)
+    {
+        return OpenEditorAsync(configurationProfileID, new RouteModel() { RouteID = "" });
+    }
+
     public async Task<bool> OpenAsync(Guid configurationProfileID, string routeID, bool validateWhenOpened = false)
     {
-        var configuration = stateStore.Current.Profiles.FirstOrDefault(x => x.ID == configurationProfileID)?.Configuration;
-        if (configuration == null)
-            return false;
-
-        var route = configuration.Routes.FirstOrDefault(x => x.RouteID == routeID);
+        var route = FindRoute(configurationProfileID, routeID);
         if (route == null)
             return false;
 
-        return await OpenAsync(configurationProfileID, route.DeepClone(), routeID, validateWhenOpened);
+        return await OpenEditorAsync(configurationProfileID, route.DeepClone(), routeID, validateWhenOpened);
     }
 
-    public async Task<bool> OpenAsync(Guid configurationProfileID, RouteModel route, string? routeID = null, bool validateWhenOpened = false)
+    public async Task<bool> CloneAsync(Guid configurationProfileID, string routeID)
+    {
+        var route = FindRoute(configurationProfileID, routeID);
+        if (route == null)
+            return false;
+
+        var clonedRoute = route.DeepClone();
+        clonedRoute.RouteID += " Cloned";
+
+        return await OpenEditorAsync(configurationProfileID, clonedRoute);
+    }
+
+    private RouteModel? FindRoute(Guid configurationProfileID, string routeID)
+    {
+        return stateStore.Current.Profiles.FirstOrDefault(x => x.ID == configurationProfileID)?.Configuration.Routes.FirstOrDefault(x => x.RouteID == routeID);
+    }
+
+    // route is a draft the editor may change; never an object from the store.
+    private async Task<bool> OpenEditorAsync(Guid configurationProfileID, RouteModel route, string? routeID = null, bool validateWhenOpened = false)
     {
         var profile = stateStore.Current.Profiles.FirstOrDefault(x => x.ID == configurationProfileID);
         if (profile == null)
@@ -42,7 +61,7 @@ internal class RouteEditorService(
         {
             { x => x.RouteID, routeID },
             { x => x.Route, route },
-            { x => x.ConfigurationProfile, profile },
+            { x => x.ConfigurationProfileID, profile.ID },
             { x => x.ValidateWhenOpened, validateWhenOpened }
         };
 
@@ -57,7 +76,7 @@ internal class RouteEditorService(
 
         try
         {
-            await configurationProvider.SaveRouteAsync(profile.ID, profile.Configuration, routeID, dialogResult.Route, dialogResult.BeforeRouteID);
+            await configurationProvider.SaveRouteAsync(profile.ID, routeID, dialogResult.Route, dialogResult.BeforeRouteID);
             logger.LogInformation("Saved route {RouteID} to configuration profile {ConfigurationProfileID}", dialogResult.Route.RouteID, profile.ID);
 
             return true;

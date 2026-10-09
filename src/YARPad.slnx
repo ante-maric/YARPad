@@ -5,7 +5,10 @@
     <File Path="../docker-compose.yml" />
     <File Path="../LICENSE" />
     <File Path="../NOTICE" />
+    <File Path=".editorconfig" />
   </Folder>
+  <Project Path="MudValidation/MudValidation.csproj" Id="e4112c6b-6b74-4e1b-a3c0-8277bd14e084" />
+  <Project Path="ReactiveStore/ReactiveStore.csproj" Id="d15aa3ac-69dd-4d4b-beeb-47cc7f0b0a69" />
   <Project Path="YARPad.Hosting/YARPad.Hosting.csproj" Id="f8f74075-deee-4c92-8ad1-87bc8e1ee72f" />
   <Project Path="YARPad.Proxy/YARPad.Proxy.csproj" Id="c5e8eb8f-1d66-47c5-8ca5-c629ef1665c4" />
   <Project Path="YARPad.Tests/YARPad.Tests.csproj" Id="66dcf173-e4ff-4980-a19d-a7e12f7de85c" />

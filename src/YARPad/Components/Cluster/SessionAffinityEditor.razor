@@ -19,12 +19,12 @@
                     <TopToolTip Text="@Tooltips.SessionAffinity_Policy">
                         <MudSelect Label="ⓘ Policy"
                                    @bind-Value="SessionAffinity.Policy"
-                                   For="@(() => SessionAffinity.Policy)"
+                                   For="@(() => Cluster.SessionAffinity.Policy)"
                                    Variant="Variant.Outlined"
                                    Dense="true"
                                    Margin="Margin.Dense"
                                    Clearable="true"
-                                   HelperText="@Policies.GetPolicyDescription(SessionAffinity.Policy)"
+                                   HelperText="@Policies.GetPolicyDescription(Cluster.SessionAffinity.Policy)"
                                    Disabled="@(!IsEnabled)">
                             @foreach (var policy in Policies)
                             {

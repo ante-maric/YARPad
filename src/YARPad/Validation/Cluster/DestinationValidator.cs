@@ -8,9 +8,11 @@ public class DestinationValidator : MudValidator<DestinationModel>
     {
         RuleFor(x => x.ID)
             .NotEmpty()
-                .WithMessage("Destination ID cannot be empty.")
+                .WithMessage("Destination ID cannot be empty.");
+
+        RuleFor(x => x.ID)
             .Must(IDMustBeUnique)
-                .When((dest, context) => context.RootContextData.ContainsKey(ValidatorContext.Cluster.IS_EDITING_DESTINATION))
+                .When((dest, context) => context.GetIsEditingDestination())
                 .WithMessage("Destination ID must be unique within the cluster.");
 
         RuleFor(x => x.Address)
@@ -21,19 +23,20 @@ public class DestinationValidator : MudValidator<DestinationModel>
 
         RuleFor(x => x.Health)
             .Must(health => Uri.TryCreate(health, UriKind.Absolute, out _))
-                .When(x => x.Health != null)
+                .When(x => !string.IsNullOrEmpty(x.Health))
                 .WithMessage("Health URI must be a valid absolute URI.");
 
         RuleFor(x => x.Host)
             .Matches(RegexPatterns.HOST)
-                .When(x => x.Host != null)
+                .When(x => !string.IsNullOrEmpty(x.Host))
                 .WithMessage("Host must be a valid host name or IP address.");
     }
 
     private static bool IDMustBeUnique(DestinationModel destination, string destinationID, ValidationContext<DestinationModel> context)
     {
-        var originalDestinationID = context.RootContextData.TryGetValue(ValidatorContext.Destination.ORIGINAL_ID, out var value) ? value as string : null;
-        if (!context.RootContextData.TryGetValue(ValidatorContext.Cluster.MODEL, out var clusterValue) || clusterValue is not ClusterModel cluster)
+        var originalDestinationID = context.GetOriginalDestinationID();
+        var cluster = context.GetClusterModel();
+        if (cluster == null)
             return false;
 
         return cluster.Destinations.TrueForAll(x => x.ID == originalDestinationID || x.ID != destinationID);

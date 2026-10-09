@@ -1,6 +1,6 @@
-﻿using Microsoft.AspNetCore.Components;
+using Microsoft.AspNetCore.Components;
 
-namespace CodingCell.YARPad.Components.Common;
+namespace CodingCell.ReactiveStore.Components;
 
 public class StateComponentBase<TState> : ComponentBase, IDisposable
 {
@@ -30,7 +30,7 @@ public class StateComponentBase<TState> : ComponentBase, IDisposable
         _ = InvokeAsync(StateHasChanged);
     }
 
-    public void Dispose()
+    public virtual void Dispose()
     {
         _subscription?.Dispose();
     }

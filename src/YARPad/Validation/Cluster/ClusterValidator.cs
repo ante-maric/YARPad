@@ -5,10 +5,10 @@ namespace CodingCell.YARPad;
 
 public class ClusterValidator : PolicyValidator<ClusterModel>
 {
-    private readonly IStoreReader<CurrentConfigurationProfileState> _currentConfigurationStateStore;
+    private readonly IStoreReader<ConfigurationProfileState> _configurationProfileStore;
 
     public ClusterValidator(
-        IStoreReader<CurrentConfigurationProfileState> currentConfigurationStateStore,
+        IStoreReader<ConfigurationProfileState> configurationProfileStore,
         IPolicyValidatorFactory policyValidatorFactory,
         DestinationValidator destinationValidator,
         SessionAffinityValidator sessionValidator,
@@ -18,7 +18,7 @@ public class ClusterValidator : PolicyValidator<ClusterModel>
         ClusterMetadataValidator metadataValidator)
         : base(policyValidatorFactory)
     {
-        _currentConfigurationStateStore = currentConfigurationStateStore;
+        _configurationProfileStore = configurationProfileStore;
 
         RuleFor(x => x.ClusterID)
             .NotEmpty()
@@ -33,22 +33,31 @@ public class ClusterValidator : PolicyValidator<ClusterModel>
             .Must(x => HaveUniqueIDs(x, x => x.ID))
                 .WithMessage("Destination IDs must be unique (case-sensitive).");
 
+        // Disabled sections are not sent to YARP (see AutoMapperProfile), so they are not validated either.
         RuleFor(x => x.SessionAffinity)
-            .SetValidator(sessionValidator);
+            .SetValidator(sessionValidator)
+                .When(x => x.IsSectionEnabled(ClusterConfigSection.SessionAffinity));
 
         RuleFor(x => x.HealthCheck)
-            .SetValidator(healthValidator);
+            .SetValidator(healthValidator)
+                .When(x => x.IsSectionEnabled(ClusterConfigSection.HealthCheck));
 
         RuleFor(x => x.HttpRequest)
-            .SetValidator(httpRequestValidator);
+            .SetValidator(httpRequestValidator)
+                .When(x => x.IsSectionEnabled(ClusterConfigSection.HttpRequest));
 
         RuleFor(x => x.HttpClient)
-            .SetValidator(httpClientValidator);
+            .SetValidator(httpClientValidator)
+                .When(x => x.IsSectionEnabled(ClusterConfigSection.HttpClient));
 
         RuleFor(x => x.Metadata)
             .SetValidator(metadataValidator)
+                .When(x => x.IsSectionEnabled(ClusterConfigSection.Metadata));
+
+        RuleFor(x => x.Metadata)
             .Must(x => HaveUniqueIDs(x, x => x.Key))
-                .WithMessage("Metadata must have unique keys (case-sensitive).");
+                .WithMessage("Metadata must have unique keys (case-sensitive).")
+                .When(x => x.IsSectionEnabled(ClusterConfigSection.Metadata));
 
         RuleFor(x => x.LoadBalancingPolicy)
             .CustomAsync((policyID, ctx, token) => ValidatePolicyAsync(policyID, ctx, PolicyType.LoadBalancing, token));
@@ -56,15 +65,15 @@ public class ClusterValidator : PolicyValidator<ClusterModel>
 
     protected override bool PreValidate(ValidationContext<ClusterModel> context, ValidationResult result)
     {
-        context.RootContextData[ValidatorContext.Cluster.MODEL] = context.InstanceToValidate;
+        context.RootContextData.SetClusterModel(context.InstanceToValidate);
 
         return base.PreValidate(context, result);
     }
 
     private bool ClusterIDMustBeUnique(ClusterModel model, string clusterID, ValidationContext<ClusterModel> context)
     {
-        var configuration = _currentConfigurationStateStore.Current.SelectedProfile?.Configuration;
-        var originalClusterID = context.RootContextData.TryGetValue(ValidatorContext.Cluster.ORIGINAL_ID, out var value) ? value as string : null;
+        var configuration = context.GetConfiguration(_configurationProfileStore);
+        var originalClusterID = context.GetOriginalClusterID();
 
         return configuration?.Clusters.TrueForAll(x => x.ClusterID == originalClusterID || x.ClusterID != clusterID) == true;
     }

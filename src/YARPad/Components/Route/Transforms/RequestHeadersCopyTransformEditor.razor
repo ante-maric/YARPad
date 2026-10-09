@@ -1,5 +1,5 @@
 <TopToolTip Text="@Tooltips.Transforms_RequestHeadersCopy_Field">
-    <MudSwitch T="bool" Label="ⓘ Copy All Request Headers" @bind-Value="Transform.RequestHeadersCopy" Color="@ColorResolver.Buttons.Switch" />
+    <MudSwitch T="bool" Label="ⓘ Copy All Request Headers" @bind-Value="Transform.RequestHeadersCopy" For="@(() => Transform.RequestHeadersCopy)" Color="@ColorResolver.Buttons.Switch" />
 </TopToolTip>
 
 @code {

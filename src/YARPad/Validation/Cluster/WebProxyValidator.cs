@@ -7,19 +7,8 @@ public class WebProxyValidator : MudValidator<WebProxyModel>
     public WebProxyValidator()
     {
         RuleFor(x => x.Address)
-            .Must(address =>
-            {
-                try
-                {
-                    new Uri(address!, UriKind.Absolute);
-                    return true;
-                }
-                catch
-                {
-                    return false;
-                }
-            })
-                .When(x => x.Address != null)
+            .Must(address => Uri.TryCreate(address, UriKind.Absolute, out _))
+                .When(x => !string.IsNullOrEmpty(x.Address))
                 .WithMessage("Web proxy address must be a valid absolute URI.");
     }
 }

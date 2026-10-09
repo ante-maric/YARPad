@@ -1,8 +1,8 @@
 ﻿using MudBlazor;
 
-namespace CodingCell.YARPad;
+namespace CodingCell.MudValidation;
 
-internal static class PatternMaskExtensions
+public static class PatternMaskExtensions
 {
     private static PatternMask _versionMask = new PatternMask("0.0");
 

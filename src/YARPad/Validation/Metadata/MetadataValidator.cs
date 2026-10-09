@@ -13,16 +13,20 @@ public abstract class MetadataValidator<T> : MudValidator<List<YarpMetadata>>
         _transformProviders = transformProviders;
 
         RuleFor(x => x)
-            .Must((metadata, metadata2, context) =>
-            {
-                if (!context.RootContextData.TryGetValue(typeof(T).Name, out var parentObj) || parentObj is not T parent)
-                    return true;
-
-                return MustBeValidAgaintsTransformProviders(parent, metadata, context);
-            })
             .Must(x => HaveUniqueIDs(x, x => x.Key))
                 .WithMessage("Metadata must have unique keys (case-sensitive).");
 
+        // Custom instead of Must: the failures are added with their own messages, so the rule must not add a generic one.
+        RuleFor(x => x)
+            .Custom((metadata, context) =>
+            {
+                // Duplicate keys are reported above and cannot be mapped to the YARP config the providers validate.
+                if (!HaveUniqueIDs(metadata, x => x.Key))
+                    return;
+
+                if (context.RootContextData.TryGetValue(typeof(T).Name, out var parentObj) && parentObj is T parent)
+                    ValidateAgainstTransformProviders(parent, metadata, context);
+            });
 
         RuleForEach(x => x)
             .SetValidator(yarpMetadataValidator);
@@ -34,5 +38,5 @@ public abstract class MetadataValidator<T> : MudValidator<List<YarpMetadata>>
         return base.PreValidate(context, result);
     }
 
-    protected abstract bool MustBeValidAgaintsTransformProviders(T parent, List<YarpMetadata> metadata, ValidationContext<List<YarpMetadata>> context);
+    protected abstract void ValidateAgainstTransformProviders(T parent, List<YarpMetadata> metadata, ValidationContext<List<YarpMetadata>> context);
 }

@@ -51,18 +51,27 @@ public class RouteModelTests : AutoMapperTest
         actualMatch.Path.ShouldBe(expected.Match.Path);
         actualMatch.Hosts.ShouldBe(expected.Match.Hosts);
         actualMatch.Methods.ShouldBe(expected.Match.Methods);
-        actualMatch.Headers.ShouldNotBeNull();
-        actualMatch.Headers.Count.ShouldBe(expected.Match.Headers.Count);
-        actualMatch.Headers[0].Name.ShouldBe(expected.Match.Headers[0].Name);
-        actualMatch.Headers[0].Values.ShouldBe(expected.Match.Headers[0].Values);
-        actualMatch.Headers[0].Mode.ShouldBe(expected.Match.Headers[0].Mode);
-        actualMatch.Headers[0].IsCaseSensitive.ShouldBe(expected.Match.Headers[0].IsCaseSensitive);
-        actualMatch.QueryParameters.ShouldNotBeNull();
-        actualMatch.QueryParameters.Count.ShouldBe(expected.Match.QueryParameters.Count);
-        actualMatch.QueryParameters[0].Name.ShouldBe(expected.Match.QueryParameters[0].Name);
-        actualMatch.QueryParameters[0].Values.ShouldBe(expected.Match.QueryParameters[0].Values);
-        actualMatch.QueryParameters[0].Mode.ShouldBe(expected.Match.QueryParameters[0].Mode);
-        actualMatch.QueryParameters[0].IsCaseSensitive.ShouldBe(expected.Match.QueryParameters[0].IsCaseSensitive);
+        var actualHeaders = actualMatch.Headers.ShouldNotBeNull();
+        actualHeaders.Count.ShouldBe(expected.Match.Headers.Count);
+        expected.Match.Headers.Count.ShouldBeGreaterThan(0);
+        for (var i = 0; i < expected.Match.Headers.Count; i++)
+        {
+            actualHeaders[i].Name.ShouldBe(expected.Match.Headers[i].Name);
+            actualHeaders[i].Values.ShouldBe(expected.Match.Headers[i].Values);
+            actualHeaders[i].Mode.ShouldBe(expected.Match.Headers[i].Mode);
+            actualHeaders[i].IsCaseSensitive.ShouldBe(expected.Match.Headers[i].IsCaseSensitive);
+        }
+
+        var actualQueryParameters = actualMatch.QueryParameters.ShouldNotBeNull();
+        actualQueryParameters.Count.ShouldBe(expected.Match.QueryParameters.Count);
+        expected.Match.QueryParameters.Count.ShouldBeGreaterThan(0);
+        for (var i = 0; i < expected.Match.QueryParameters.Count; i++)
+        {
+            actualQueryParameters[i].Name.ShouldBe(expected.Match.QueryParameters[i].Name);
+            actualQueryParameters[i].Values.ShouldBe(expected.Match.QueryParameters[i].Values);
+            actualQueryParameters[i].Mode.ShouldBe(expected.Match.QueryParameters[i].Mode);
+            actualQueryParameters[i].IsCaseSensitive.ShouldBe(expected.Match.QueryParameters[i].IsCaseSensitive);
+        }
 
         actual.Metadata.ShouldNotBeNull();
         actual.Metadata.ShouldBe(expected.Metadata.ToDictionary(m => m.Key, m => m.Value!));
@@ -96,5 +105,16 @@ public class RouteModelTests : AutoMapperTest
                 actualDictionary.ShouldContainKeyAndValue(kvp.Key, kvp.Value);
             }
         }
+    }
+
+    [Theory]
+    [InlineData(RouteConfigSection.General)]
+    [InlineData(RouteConfigSection.Match)]
+    public void IsSectionEnabled_ShouldReturnTrueForMandatorySections_WhenStoredSwitchIsDisabled(RouteConfigSection section)
+    {
+        var route = new RouteModel { RouteID = "route" };
+        route.SectionSwitches[section].IsEnabled = false;
+
+        route.IsSectionEnabled(section).ShouldBeTrue();
     }
 }

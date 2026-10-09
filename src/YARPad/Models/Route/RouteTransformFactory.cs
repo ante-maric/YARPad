@@ -2,18 +2,18 @@ namespace CodingCell.YARPad;
 
 internal static class RouteTransformFactory
 {
-    public static RouteTransform Create(string type, List<CustomTransformDefinition> customTransforms)
+    public static RouteTransform Create(string type, IReadOnlyList<CustomTransformDefinition> customTransforms)
     {
         if (Enum.TryParse<RouteTransformType>(type, out var transformType))
             return Create(transformType);
 
-        if (customTransforms.Find(x => x.Type == type) is CustomTransformDefinition customTransform)
+        if (customTransforms.FirstOrDefault(x => x.Type == type) is CustomTransformDefinition customTransform)
         {
             return new CustomTransform
             {
                 CustomTransformType = type,
                 Description = customTransform.Description ?? "Custom transform",
-                ParameterDefinitions = customTransform.Parameters,
+                ParameterDefinitions = customTransform.Parameters.ConvertAll(x => x with { }),
                 Parameters = customTransform.Parameters.ConvertAll(x => new CustomTransformParameter() {  Key = x.Name  })
             };
         }

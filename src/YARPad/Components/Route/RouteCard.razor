@@ -202,14 +202,14 @@
 
     private string GetSectionIconColorClass(RouteConfigSection section)
     {
-        return Route.SectionSwitches[section].IsEnabled
+        return Route.IsSectionEnabled(section)
             ? section.ToIconColorClass()
             : YarpadColor.Gray;
     }
 
     private string GetSectionChipColorClasses(RouteConfigSection section)
     {
-        return Route.SectionSwitches[section].IsEnabled
+        return Route.IsSectionEnabled(section)
             ? section.ToChipColorClasses()
             : YarpadColor.Gray;
     }

@@ -1,3 +1,4 @@
+@implements IDisposable
 @inject IPolicyValidatorFactory ValidatorFactory
 
 <MudDialog Class="border mud-border-primary-darken">
@@ -6,7 +7,7 @@
     </TitleContent>
 
     <DialogContent>
-        <MudForm @ref="_form" Model="@Policy" Validation="_validationHandler.ValidateAsync">
+        <MudForm @ref="_form" Model="@Policy" Validation="_validationHandler?.Validation">
             <MudStack Spacing="2">
                 <MudTextField
                     Label="Identifier"
@@ -23,11 +24,13 @@
                     Variant="Variant.Outlined" />
             </MudStack>
         </MudForm>
+
+        <ValidationErrorList Errors="@(_validationHandler?.UnclaimedErrors ?? [])" />
     </DialogContent>
 
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="@ColorResolver.Buttons.Save" OnClick="Save">Save</MudButton>
+        <MudButton Color="@ColorResolver.Buttons.Save" OnClick="Save" Disabled="@(_validationHandler?.IsValidating == true)">Save</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -35,6 +38,7 @@
     private MudForm? _form;
     private MudValidator<PolicyInfo>? _validator;
     private DeferredValidationHandler<PolicyInfo>? _validationHandler;
+    private PolicyType? _validatorPolicyType;
 
     [CascadingParameter]
     private IMudDialogInstance MudDialog { get; set; } = default!;
@@ -48,6 +52,9 @@
     [Parameter, EditorRequired]
     public required PolicyInfo Policy { get; set; }
 
+    [Parameter, EditorRequired]
+    public Guid ConfigurationProfileID { get; set; }
+
     private async Task Save()
     {
         if (_validationHandler == null || _form == null)
@@ -55,9 +62,7 @@
 
         Policy.Name = Policy.ID.HumanizeTitle();
 
-        await _validationHandler.ExecuteValidationAsync(() => _form.ValidateAsync());
-
-        if (!_form.IsValid)
+        if (!await _validationHandler.ValidateAsync(Policy, () => _form.ValidateAsync(), () => _form.IsValid))
             return;
 
         MudDialog.Close(DialogResult.Ok(Policy));
@@ -69,10 +74,18 @@
     {
         base.OnParametersSet();
 
-        _validator = ValidatorFactory.GetValidator(PolicyType);
-        _validator.ContextData[ValidatorContext.Policy.IS_EDITING] = true;
-        _validator.ContextData[ValidatorContext.Policy.ORIGINAL_ID] = PolicyID;
+        // The validator depends on PolicyType, so only replace the handler when it changes.
+        if (_validationHandler == null || _validatorPolicyType != PolicyType)
+        {
+            _validationHandler?.Dispose();
+            _validator = ValidatorFactory.GetValidator(PolicyType);
+            _validationHandler = new(_validator);
+            _validatorPolicyType = PolicyType;
+        }
 
-        _validationHandler = new(_validator);
+        var contextData = ValidatorContextData.CreatePolicy(PolicyID, ConfigurationProfileID);
+        _validationHandler.SetContextData(contextData);
     }
+
+    void IDisposable.Dispose() => _validationHandler?.Dispose();
 }

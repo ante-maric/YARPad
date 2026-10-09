@@ -1,4 +1,5 @@
-﻿@inject IDialogService DialogService
+﻿@implements IDisposable
+@inject IDialogService DialogService
 @inject CustomTransformDefinitionValidator Validator
 
 <MudDialog Style="height: calc(100% - 64px);" Class="sticky-header-dialog border mud-border-primary-darken">
@@ -9,7 +10,7 @@
     <DialogContent>
         <MudForm @ref="_form"
                  Model="@Transform"
-                 Validation="@_validationHandler.ValidateAsync">
+                 Validation="@_validationHandler?.Validation">
             <MudStack Spacing="2">
                 <MudTextField Label="Type"
                               @bind-Value="Transform.Type"
@@ -73,10 +74,12 @@
                 </CustomInput>
             </MudStack>
         </MudForm>
+
+        <ValidationErrorList Errors="@(_validationHandler?.UnclaimedErrors ?? [])" />
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="@ColorResolver.Buttons.Save" OnClick="Save">Save</MudButton>
+        <MudButton Color="@ColorResolver.Buttons.Save" OnClick="Save" Disabled="@(_validationHandler?.IsValidating == true)">Save</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -93,14 +96,15 @@
     [Parameter, EditorRequired]
     public required CustomTransformDefinition Transform { get; set; }
 
+    [Parameter, EditorRequired]
+    public Guid ConfigurationProfileID { get; set; }
+
     private async Task Save()
     {
         if (_validationHandler == null || _form == null)
             return;
 
-        await _validationHandler.ExecuteValidationAsync(() => _form.ValidateAsync());
-
-        if (!_form.IsValid)
+        if (!await _validationHandler.ValidateAsync(Transform, () => _form.ValidateAsync(), () => _form.IsValid))
             return;
 
         MudDialog.Close(DialogResult.Ok(Transform));
@@ -166,6 +170,10 @@
     {
         base.OnParametersSet();
 
-        Validator.ContextData[ValidatorContext.CustomTransform.ORIGINAL_TYPE] = OriginalType;
+        var contextData = ValidatorContextData.CreateCustomTransform(OriginalType, ConfigurationProfileID);
+
+        _validationHandler?.SetContextData(contextData);
     }
+
+    void IDisposable.Dispose() => _validationHandler?.Dispose();
 }

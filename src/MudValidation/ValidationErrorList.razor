@@ -1,0 +1,9 @@
+@foreach (var error in Errors)
+{
+    <MudAlert Severity="Severity.Error" Dense="true" Class="mt-2">@error</MudAlert>
+}
+
+@code {
+    [Parameter, EditorRequired]
+    public required IReadOnlyList<string> Errors { get; set; }
+}

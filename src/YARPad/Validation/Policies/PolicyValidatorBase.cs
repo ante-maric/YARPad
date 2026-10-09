@@ -25,10 +25,14 @@ public abstract class PolicyValidatorBase : MudValidator<PolicyInfo>
 
         RuleFor(x => x.ID)
             .NotEmpty()
-                .WithMessage("Policy ID cannot be empty.")
+                .WithMessage("Policy ID cannot be empty.");
+
+        RuleFor(x => x.ID)
             .MustAsync(IDMustBeUniqueAsync)
                 .When((policy, ctx) => ctx.RootContextData.ContainsKey(ValidatorContext.Policy.IS_EDITING))
-                .WithMessage("Policy ID must be unique.")
+                .WithMessage("Policy ID must be unique.");
+
+        RuleFor(x => x.ID)
             .MustAsync((policy, id, context, cancellationToken) => PolicyMustBeRegistered(policy, id, cancellationToken))
                 .WithMessage(_notRegisteredErrorMessage);
     }
@@ -39,7 +43,9 @@ public abstract class PolicyValidatorBase : MudValidator<PolicyInfo>
     {
         var originalPolicyID = context.RootContextData.TryGetValue(ValidatorContext.Policy.ORIGINAL_ID, out var value) ? value as string : null;
 
-        var policies = await _policyProvider.GetPoliciesAsync(_policyType, cancellationToken);
+        var policies = context.GetConfigurationProfileID() is Guid configurationProfileID
+            ? await _policyProvider.GetPoliciesAsync(configurationProfileID, _policyType, cancellationToken)
+            : [];
 
         return policies.TrueForAll(x => x.ID == originalPolicyID || x.ID != policyID);
     }

@@ -80,7 +80,7 @@
 
     @code {
     [Parameter, EditorRequired]
-    public List<CustomTransformDefinition> CustomTransforms { get; set; } = [];
+    public IReadOnlyList<CustomTransformDefinition> CustomTransforms { get; set; } = [];
 
     [Parameter, EditorRequired]
     public required RouteModel Route { get; set; }

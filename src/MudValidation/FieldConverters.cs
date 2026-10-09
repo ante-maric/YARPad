@@ -1,8 +1,8 @@
 ﻿using MudBlazor;
 
-namespace CodingCell.YARPad;
+namespace CodingCell.MudValidation;
 
-internal static class FieldConverters
+public static class FieldConverters
 {
     public static readonly IConverter<Version?, string> Version = CreateVersionConverter();
     public static readonly IConverter<TimeSpan?, string> TimeSpan = CreateTimeSpanConverter();

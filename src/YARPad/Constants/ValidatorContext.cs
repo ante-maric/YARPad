@@ -2,6 +2,11 @@ namespace CodingCell.YARPad;
 
 internal static class ValidatorContext
 {
+    internal static class Profile
+    {
+        public const string ID = "ConfigurationProfileID";
+    }
+
     internal static class Policy
     {
         public const string ORIGINAL_ID = "OriginalPolicyID";

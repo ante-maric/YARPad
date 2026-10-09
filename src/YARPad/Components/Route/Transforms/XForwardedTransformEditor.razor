@@ -1,5 +1,5 @@
  <TopToolTip Text="@Tooltips.Transforms_XForwarded_Name">
-    <MudSelect Label="ⓘ Default Action" @bind-Value="Transform.XForwarded" Variant="Variant.Outlined" Margin="Margin.Dense">
+    <MudSelect Label="ⓘ Default Action" @bind-Value="Transform.XForwarded" For="@(() => Transform.XForwarded)" Variant="Variant.Outlined" Margin="Margin.Dense">
         @foreach (ForwardedTransformAction item in Enum.GetValues(typeof(ForwardedTransformAction)))
         {
             <MudSelectItem Value="@item">@item.ToString()</MudSelectItem>
@@ -8,7 +8,7 @@
 </TopToolTip>
 
 <TopToolTip Text="@Tooltips.Transforms_XForwarded_For">
-    <MudSelect Label="ⓘ For Header Action" @bind-Value="Transform.For" Variant="Variant.Outlined" Margin="Margin.Dense">
+    <MudSelect Label="ⓘ For Header Action" @bind-Value="Transform.For" For="@(() => Transform.For)" Variant="Variant.Outlined" Margin="Margin.Dense">
         @foreach (ForwardedTransformAction item in Enum.GetValues(typeof(ForwardedTransformAction)))
         {
             <MudSelectItem Value="@((ForwardedTransformAction?)item)">@item.ToString()</MudSelectItem>
@@ -17,7 +17,7 @@
 </TopToolTip>
 
 <TopToolTip Text="@Tooltips.Transforms_XForwarded_Proto">
-    <MudSelect Label="ⓘ Proto Header Action" @bind-Value="Transform.Proto" Variant="Variant.Outlined" Margin="Margin.Dense">
+    <MudSelect Label="ⓘ Proto Header Action" @bind-Value="Transform.Proto" For="@(() => Transform.Proto)" Variant="Variant.Outlined" Margin="Margin.Dense">
         @foreach (ForwardedTransformAction item in Enum.GetValues(typeof(ForwardedTransformAction)))
         {
             <MudSelectItem Value="@((ForwardedTransformAction?)item)">@item.ToString()</MudSelectItem>
@@ -26,7 +26,7 @@
 </TopToolTip>
 
 <TopToolTip Text="@Tooltips.Transforms_XForwarded_Host">
-    <MudSelect Label="ⓘ Host Header Action" @bind-Value="Transform.Host" Variant="Variant.Outlined" Margin="Margin.Dense">
+    <MudSelect Label="ⓘ Host Header Action" @bind-Value="Transform.Host" For="@(() => Transform.Host)" Variant="Variant.Outlined" Margin="Margin.Dense">
         @foreach (ForwardedTransformAction item in Enum.GetValues(typeof(ForwardedTransformAction)))
         {
             <MudSelectItem Value="@((ForwardedTransformAction?)item)">@item.ToString()</MudSelectItem>
@@ -35,7 +35,7 @@
 </TopToolTip>
 
 <TopToolTip Text="@Tooltips.Transforms_XForwarded_Prefix">
-    <MudSelect Label="ⓘ Prefix Header Action" @bind-Value="Transform.Prefix" Variant="Variant.Outlined" Margin="Margin.Dense">
+    <MudSelect Label="ⓘ Prefix Header Action" @bind-Value="Transform.Prefix" For="@(() => Transform.Prefix)" Variant="Variant.Outlined" Margin="Margin.Dense">
         @foreach (ForwardedTransformAction item in Enum.GetValues(typeof(ForwardedTransformAction)))
         {
             <MudSelectItem Value="@((ForwardedTransformAction?)item)">@item.ToString()</MudSelectItem>

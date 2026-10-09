@@ -1,7 +1,7 @@
-﻿@using System.Security.Authentication
-@using AutoMapper
+﻿@using AutoMapper
 @using Yarp.ReverseProxy.Configuration
 
+@implements IDisposable
 @inject IUnifiedPolicyProvider PolicyProvider
 @inject ClusterValidator Validator
 @inject IYARPadConfigurationProvider ConfigurationProvider
@@ -20,7 +20,7 @@
         <div class="flex-none">
             <MudForm @ref="_mainForm"
                      Model="@Cluster"
-                     Validation="@_validationHandler.ValidateAsync">
+                     Validation="@_validationHandler?.Validation">
                 <MudStack Spacing="2" Class="mb-2">
                     <MudStack Row="true" Spacing="2" StretchItems="StretchItems.All">
                         <MudTextField Label="Identifier"
@@ -67,6 +67,8 @@
                     </TopToolTip>
                 </MudStack>
             </MudForm>
+
+            <ValidationErrorList Errors="@(_validationHandler?.UnclaimedErrors ?? [])" />
         </div>
 
         <div class="d-flex flex-auto flex-column" style="min-height:0;">
@@ -75,9 +77,11 @@
                          Elevation="1"
                          ApplyEffectsToContainer="true"
                          KeepPanelsAlive="true"
-                         PanelClass="pa-2">
+                         TabPanelsClass="pa-2">
                     <ChildContent>
-                        <MudTabPanel Text="ⓘ Destinations">
+                        <MudTabPanel Text="ⓘ Destinations"
+                                     BadgeDot="@(_destinationsForm?.IsValid == false)"
+                                     BadgeColor="@ColorResolver.Symbol.BadgeError">
                             <TabWrapperContent>
                                 <TopToolTip Text="@Tooltips.Cluster_Destinations">
                                     @context
@@ -86,7 +90,7 @@
                             <ChildContent>
                                 <MudForm @ref="_destinationsForm"
                                          Model="@Cluster"
-                                         Validation="@_validationHandler.ValidateAsync"
+                                         Validation="@_validationHandler?.Validation"
                                          Class="pa-2">
                                     <DestinationsEditor Destinations="@Cluster.Destinations" />
                                 </MudForm>
@@ -105,7 +109,7 @@
                                 <div class="overflow-auto pa-2">
                                     <MudForm @ref="_sessionAffinityForm"
                                              Model="@Cluster"
-                                             Validation="@_validationHandler.ValidateAsync">
+                                             Validation="@_validationHandler?.Validation">
                                         <SessionAffinityEditor SessionAffinity="@Cluster.SessionAffinity"
                                                                Policies="@_policies.GetValueOrDefault(PolicyType.SessionAffinity, [])"
                                                                FailurePolicies="@_policies.GetValueOrDefault(PolicyType.SessionAffinityFailure, [])"
@@ -127,7 +131,7 @@
                                 <div class="overflow-auto pa-2">
                                     <MudForm @ref="_healthCheckForm"
                                              Model="@Cluster"
-                                             Validation="@_validationHandler.ValidateAsync">
+                                             Validation="@_validationHandler?.Validation">
                                         <HealthCheckEditor HealthCheck="@Cluster.HealthCheck"
                                                            ActivePolicies="@_policies.GetValueOrDefault(PolicyType.ActiveHealthCheck, [])"
                                                            PassivePolicies="@_policies.GetValueOrDefault(PolicyType.PassiveHealthCheck, [])"
@@ -150,7 +154,7 @@
                                 <div class="overflow-auto pa-2">
                                     <MudForm @ref="_httpClientForm"
                                              Model="@Cluster"
-                                             Validation="@_validationHandler.ValidateAsync">
+                                             Validation="@_validationHandler?.Validation">
                                         <HttpClientEditor HttpClient="@Cluster.HttpClient"
                                                           IsEnabled="@IsSectionEnabled(ClusterConfigSection.HttpClient)" />
                                     </MudForm>
@@ -170,7 +174,7 @@
                                 <div class="overflow-auto pa-2">
                                     <MudForm @ref="_httpRequestForm"
                                              Model="@Cluster"
-                                             Validation="@_validationHandler.ValidateAsync">
+                                             Validation="@_validationHandler?.Validation">
                                         <HttpRequestEditor HttpRequest="@Cluster.HttpRequest"
                                                            IsEnabled="@IsSectionEnabled(ClusterConfigSection.HttpRequest)" />
                                     </MudForm>
@@ -190,7 +194,7 @@
                                 <div class="overflow-auto pa-2">
                                     <MudForm @ref="_metadataForm"
                                              Model="@Cluster"
-                                             Validation="@_validationHandler.ValidateAsync">
+                                             Validation="@_validationHandler?.Validation">
                                         <MetadataEditor TParent="ClusterModel" 
                                                         Metadata="@Cluster.Metadata" 
                                                         ForMetadata="@(() => Cluster.Metadata)"
@@ -207,7 +211,7 @@
     </DialogContent>
     <DialogActions>
         <MudButton OnClick="Cancel">Cancel</MudButton>
-        <MudButton Color="@ColorResolver.Buttons.Save" OnClick="Save">Save</MudButton>
+        <MudButton Color="@ColorResolver.Buttons.Save" OnClick="Save" Disabled="@(_validationHandler?.IsValidating == true)">Save</MudButton>
     </DialogActions>
 </MudDialog>
 
@@ -233,6 +237,9 @@
 
     [Parameter, EditorRequired]
     public required ClusterModel Cluster { get; set; }
+
+    [Parameter, EditorRequired]
+    public Guid ConfigurationProfileID { get; set; }
 
     [Parameter]
     public bool ValidateWhenOpened { get; set; }
@@ -275,29 +282,40 @@
         if (_validationHandler == null)
             return;
 
-        await _validationHandler.ExecuteValidationAsync(() => Task.WhenAll(Forms.Select(x => x.ValidateAsync())));
+        var canClose = false;
 
-        if (!Forms.TrueForAll(x => x.IsValid))
-            return;
-
-        var exceptions = await ConfigValidator.ValidateClusterAsync(Mapper.Map<ClusterConfig>(Cluster));
-        if (exceptions.Count > 0)
-        {
-            var options = new DialogOptions()
+        await _validationHandler.TryValidateAndExecuteAsync(
+            Cluster,
+            () => Task.WhenAll(Forms.Select(x => x.ValidateAsync())),
+            () => Forms.TrueForAll(x => x.IsValid),
+            async () =>
             {
-                MaxWidth = MaxWidth.Small,
-                FullWidth = true,
-            };
+                var exceptions = await ConfigValidator.ValidateClusterAsync(Mapper.Map<ClusterConfig>(Cluster));
+                if (exceptions.Count > 0)
+                    await ShowValidationErrorsAsync(exceptions.Select(x => x.Message).ToList());
+                else
+                    canClose = true;
+            });
 
-            var parameters = new DialogParameters<ValidationErrorsDialog>()
-            {
-                { x => x.Errors, Enumerable.Repeat(exceptions.Select(x => x.Message).First(), 20).ToList() },
-            };
-
-            await DialogService.ShowAsync<ValidationErrorsDialog>(null, parameters, options);
-        }
-        else
+        // Close outside the handler's gate: closing disposes this component (and the handler).
+        if (canClose)
             MudDialog.Close(DialogResult.Ok(Cluster));
+    }
+
+    private async Task ShowValidationErrorsAsync(List<string> errors)
+    {
+        var options = new DialogOptions()
+        {
+            MaxWidth = MaxWidth.Small,
+            FullWidth = true,
+        };
+
+        var parameters = new DialogParameters<ValidationErrorsDialog>()
+        {
+            { x => x.Errors, errors },
+        };
+
+        await DialogService.ShowAsync<ValidationErrorsDialog>(null, parameters, options);
     }
 
     private void Cancel() => MudDialog.Cancel();
@@ -306,12 +324,14 @@
     {
         await base.OnInitializedAsync();
 
-        Validator.ContextData[ValidatorContext.Cluster.ORIGINAL_ID] = ClusterID;
         _validationHandler = new(Validator);
+
+        var contextData = ValidatorContextData.CreateCluster(ClusterID, ConfigurationProfileID);
+        _validationHandler.SetContextData(contextData);
 
         foreach (var policyType in PolicyContext.Cluster.GetPolicyTypes())
         {
-            var policies = await PolicyProvider.GetPoliciesAsync(policyType, default);
+            var policies = await PolicyProvider.GetPoliciesAsync(ConfigurationProfileID, policyType, default);
             _policies[policyType] = policies;
         }
     }
@@ -325,7 +345,15 @@
             // Let child components finish their first render/field registration.
             await Task.Yield();
 
-            await _validationHandler.ExecuteValidationAsync(() => Task.WhenAll(Forms.Select(x => x.ValidateAsync())));
+            await _validationHandler.ValidateAsync(
+                Cluster,
+                () => Task.WhenAll(Forms.Select(x => x.ValidateAsync())),
+                () => Forms.TrueForAll(x => x.IsValid));
+
+            // Errors without a field are rendered by this component, which does not re-render after this method on its own.
+            StateHasChanged();
         }
     }
+
+    void IDisposable.Dispose() => _validationHandler?.Dispose();
 }

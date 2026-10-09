@@ -10,7 +10,7 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>YARPad</title>
-    <base href="@Options.Value.GetBasePath()" />
+    <base href="@(HttpContext.Request.PathBase.ToString().TrimEnd('/') + "/")" />
     <ResourcePreloader />
     <link rel="stylesheet" href="@Assets["_content/CodingCell.YARPad/lib/bootstrap/dist/css/bootstrap.min.css"]" />
     <link rel="stylesheet" href="@Assets["_content/CodingCell.YARPad/app.css"]" />
@@ -30,7 +30,7 @@
 
 <body class="yarpad-theme-dark">
 <script>
-    window.yarpadBasePath = '@Options.Value.GetNormalizedPathPrefix()';
+            window.yarpadBasePath = '@HttpContext.Request.PathBase.ToString().TrimEnd('/')';
     (() => {
         if (window.yarpadTheme && typeof window.yarpadTheme.applyFromCookie === 'function') {
             window.yarpadTheme.applyFromCookie();

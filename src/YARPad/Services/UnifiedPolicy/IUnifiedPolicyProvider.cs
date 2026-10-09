@@ -2,5 +2,5 @@
 
 public interface IUnifiedPolicyProvider
 {
-    Task<List<PolicyInfo>> GetPoliciesAsync(PolicyType policyType, CancellationToken cancellationToken);
+    Task<List<PolicyInfo>> GetPoliciesAsync(Guid configurationProfileID, PolicyType policyType, CancellationToken cancellationToken);
 }

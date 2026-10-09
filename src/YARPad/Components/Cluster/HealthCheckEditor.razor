@@ -103,7 +103,8 @@
                                       For="@(() => Cluster.HealthCheck.Active.Path)"
                                       Variant="Variant.Outlined"
                                       Margin="Margin.Dense"
-                                      Disabled="@(!IsEnabled)" />
+                                      Disabled="@(!IsEnabled)"
+                                      Clearable="true"/>
                     </TopToolTip>
                     <TopToolTip Text="@Tooltips.HealthCheck_Active_Query">
                         <MudTextField Label="ⓘ Query"

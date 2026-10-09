@@ -11,7 +11,7 @@ internal sealed class CertificateMaintainerService(
     ILogger<CertificateMaintainerService> logger)
     : BackgroundService
 {
-    private static readonly TimeSpan CheckInterval = TimeSpan.FromDays(1);
+    private static readonly TimeSpan _checkInterval = TimeSpan.FromDays(1);
 
     private readonly LetsEncryptOptions _letsEncrypt = options.Value.LetsEncrypt;
 
@@ -27,7 +27,7 @@ internal sealed class CertificateMaintainerService(
 
         try
         {
-            using var timer = new PeriodicTimer(CheckInterval);
+            using var timer = new PeriodicTimer(_checkInterval);
             while (await timer.WaitForNextTickAsync(stoppingToken))
                 await RunCheckAsync(stoppingToken);
         }
